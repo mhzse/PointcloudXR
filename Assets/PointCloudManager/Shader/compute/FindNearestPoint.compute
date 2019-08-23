@@ -1,0 +1,228 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel ComputeDistanceToPoints
+#pragma kernel CreatePointsPositionBuffer
+#pragma kernel CreateSelectedPointsAppendBuffer
+#pragma kernel CreatePointsSelectedPositionBuffer
+#pragma kernel ReduceDistance
+#pragma kernel SetMinDistance
+
+#pragma enable_d3d11_debug_symbols
+
+#include "UnityCG.cginc"
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+struct PointPos
+{
+	float3 pos;
+	uint   id;
+};
+
+struct PointDistance
+{
+	float dist;
+	uint  id;
+};
+
+RWStructuredBuffer<PointXR>	       _PointsBuffer;
+RWStructuredBuffer<PointPos>       _PointsPositionBuffer;
+
+RWStructuredBuffer<uint>           _NearestPointIdBuffer;
+RWStructuredBuffer<float3>         _NearestPointPositionBuffer;
+RWStructuredBuffer<PointDistance>  _DistanceBuffer;
+RWStructuredBuffer<PointDistance>  _DistanceReduceBuffer;
+
+AppendStructuredBuffer<PointXR>    _selected_points_append;
+ConsumeStructuredBuffer<PointXR>   _selected_points_consume;
+
+float3 _NearestPointFromPosition;
+int    _selected_points_count;
+int    _points_count;
+
+#define NUM_THREADS 1024
+
+[numthreads(NUM_THREADS, 1, 1)]
+void CreateSelectedPointsAppendBuffer(uint3 tid : SV_DispatchThreadID)
+{
+    if (_PointsBuffer[tid.x].selected)
+    {
+        _selected_points_append.Append(_PointsBuffer[tid.x]);
+    }
+}
+
+[numthreads(NUM_THREADS, 1, 1)]
+void CreatePointsSelectedPositionBuffer(uint3 tid : SV_DispatchThreadID)
+{
+    if(tid.x < _selected_points_count)
+    {
+        PointXR pcxr = _selected_points_consume.Consume();
+        PointPos pp;
+        pp.pos = float3(pcxr.pos);
+        pp.id = tid.x;
+
+        _PointsPositionBuffer[tid.x] = pp;
+    }
+}
+
+[numthreads(NUM_THREADS, 1, 1)]
+void CreatePointsPositionBuffer(uint3 tid : SV_DispatchThreadID, uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID)
+{
+	uint group_global = gid.x * NUM_THREADS;
+	uint thread_global = group_global + gtid.x;
+
+	PointPos pp;
+	pp.pos = _PointsBuffer[thread_global].pos;
+	pp.id = tid.x;
+
+	_PointsPositionBuffer[thread_global] = pp;
+}
+
+[numthreads(NUM_THREADS, 1, 1)]
+void ComputeDistanceToPoints(uint3 tid : SV_DispatchThreadID, uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID)
+{
+	uint group_global = gid.x * NUM_THREADS;
+	uint thread_global = group_global + gtid.x;
+    
+	PointPos pp = _PointsPositionBuffer[thread_global];
+
+	PointDistance pd;
+	pd.id = pp.id;
+	pd.dist = length(_NearestPointFromPosition - pp.pos);
+
+	_DistanceBuffer[thread_global] = pd;
+}
+
+#define NUM_THREADS_MIN_DIST 1024
+groupshared PointDistance sdata[NUM_THREADS_MIN_DIST];
+
+// See if the point at offset is closer, and replace current point if it is.
+void Tester(uint threadGroupId, uint bufferOffset)
+{
+	if (sdata[threadGroupId + bufferOffset].dist < sdata[threadGroupId].dist)
+	{
+		sdata[threadGroupId] = sdata[threadGroupId + bufferOffset];
+	}
+}
+
+[numthreads(NUM_THREADS_MIN_DIST, 1, 1)]
+void ReduceDistance(uint threadGroupId : SV_GroupIndex, uint3 groupIdx : SV_GroupID)
+{
+    // Each group handles NUM_THREADS_MIN_DIST * 2 values
+
+    // Example 4096 points
+    // Group 0:    0 - 2047
+    // Group 1: 2048 - 4095
+
+	uint groupDim_x = NUM_THREADS_MIN_DIST;
+    
+    // What value in _DistanceBuffer should I read? Calculate global index for current thread
+    uint i = groupIdx.x * (groupDim_x * 2) + threadGroupId;
+
+    sdata[threadGroupId]  = _DistanceBuffer[i];
+	PointDistance second  = _DistanceBuffer[i+groupDim_x];
+
+    if (second.dist < sdata[threadGroupId].dist)
+    {
+        sdata[threadGroupId] = second;
+    }
+	GroupMemoryBarrierWithGroupSync();
+
+    // Now we have 1024 values calculated in sdata
+
+    // s = 512
+    // s = 256
+    // s = 128
+    // s =  64
+    for (uint s = groupDim_x / 2; s > 32; s >>= 1)
+    {
+        // Only half of the threads execute this
+        if (threadGroupId < s)
+        {
+            Tester(threadGroupId, s);
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    if (threadGroupId < 32)
+    {
+        if (sdata[threadGroupId + 32].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 32];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadGroupId < 16)
+    {
+        if (sdata[threadGroupId + 16].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 16];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadGroupId < 8)
+    {
+        if (sdata[threadGroupId + 8].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 8];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadGroupId < 4)
+    {
+        if (sdata[threadGroupId + 4].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 4];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadGroupId < 2)
+    {
+        if (sdata[threadGroupId + 2].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 2];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadGroupId < 1)
+    {
+        if (sdata[threadGroupId + 1].dist < sdata[threadGroupId].dist)
+        {
+            sdata[threadGroupId] = sdata[threadGroupId + 1];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+
+    // Only first thread is allowed to write
+    if (threadGroupId == 0)
+	{
+        _DistanceReduceBuffer[groupIdx.x] = sdata[0];
+    }
+}
+
+uint dist_reduce_groups;
+[numthreads(1, 1, 1)]
+void SetMinDistance(uint3 threadIdx : SV_GroupThreadID, uint3 groupIdx : SV_GroupID)
+{
+	PointDistance pd = _DistanceReduceBuffer[0];
+
+	// uint num_groups = dist_reduce_groups;
+	for (uint i = 1; i < dist_reduce_groups; i++)
+	{
+		PointDistance p_dist = _DistanceReduceBuffer[i];
+		if (p_dist.dist < pd.dist)
+		{
+			pd = p_dist;
+		}
+	}
+
+    _NearestPointIdBuffer[0]       = pd.id;
+    _NearestPointPositionBuffer[0] = _PointsPositionBuffer[pd.id].pos;
+
+}

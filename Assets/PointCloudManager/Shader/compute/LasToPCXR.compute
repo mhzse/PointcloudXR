@@ -1,0 +1,312 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel LAS12PDR0
+#pragma kernel LAS12PDR1
+#pragma kernel LAS12PDR2
+#pragma kernel LAS12PDR3
+#define NUM_TREADS 1024
+#pragma enable_d3d11_debug_symbols
+
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+// 20 bytes
+struct LAS12PDR0Point
+{
+    int  X;
+    int  Y;
+    int  Z;
+    uint Intensity_Bitfields_Classification;   // 2 + 1 + 1
+    uint ScanAngleRank_UserData_PointSourceID; // 1 + 1 + 2
+};
+
+// 28 bytes
+struct LAS12PDR1Point
+{
+    int    X;
+    int    Y;
+    int    Z;
+    uint   Intensity_Bitfields_Classification;   // 2 + 1 + 1
+    uint   ScanAngleRank_UserData_PointSourceID; // 1 + 1 + 2
+    float2 GPSTime;                              // 8
+};
+
+// 26 + 2 bytes
+struct LAS12PDR2Point
+{
+    int  X; // long integer?
+    int  Y;
+    int  Z;
+    uint Intensity_Bitfields_Classification;   // 2 + 1 + 1
+    uint ScanAngleRank_UserData_PointSourceID; // 1 + 1 + 2
+    uint Red_Green;                            // 2 + 2
+    uint Blue_Padding;                         // 2 + 2
+};
+
+// 34 + 2 bytes
+struct LAS12PDR3Point
+{
+    int  X;
+    int  Y;
+    int  Z;
+	//ushort Intensity;      // 2 bytes
+    //byte   Bitfields;      // 1 byte
+    //byte   Classification; // 1 byte
+    uint Intensity_Bitfields_Classification; // 2 + 1 + 1
+    // 0x1111 1111 1111 1111 0000 0000 1111 1111
+    //   |    Intensity     |Bitfields| Classification
+
+    //byte   ScanAngleRank;  // 1 byte         
+    //byte   UserData;       // 1 byte
+	//byte   PointSourceID;  // 2 bytes
+    uint ScanAngleRank_UserData_PointSourceID; // 1 + 1 + 2
+	// 0x1111 1111 0000 0000 1111 1111 1111 1111
+    //   |ScanAng.|UserData |   PointSourceID   |
+
+    float2 GPSTime; // 8 bytes
+	//ushort Red;            // 2 bytes
+	//ushort Green;          // 2 bytes
+    uint Red_Green; // 2 + 2
+    // 0x1111 1111 1111 1111 0000 0000 0000 0000
+    //   |       Red        |       Green       |
+
+	//ushort Blue;         // 2 bytes
+    //ushort Padding;      // 2 bytes
+    uint Blue_Padding; // 2 + 2
+    // 0x1111 1111 1111 1111 0000 0000 0000 0000
+    //   |       Blue       |      Padding      |
+};
+
+struct LAS12Header
+{
+    double Xscalefactor;
+    double Yscalefactor;
+    double Zscalefactor;
+    double Xoffset;
+    double Yoffset;
+    double Zoffset;
+    double MaxX;
+    double MinX;
+    double MaxY;
+    double MinY;
+    double MaxZ;
+    double MinZ;
+};
+
+RWStructuredBuffer<PointXR>      _Points      : register(u6);
+
+StructuredBuffer<LAS12Header>    _LAS12Header : register(t5);
+StructuredBuffer<LAS12PDR0Point> _LAS12PDR0   : register(t4);
+StructuredBuffer<LAS12PDR1Point> _LAS12PDR1   : register(t3);
+StructuredBuffer<LAS12PDR2Point> _LAS12PDR2   : register(t2);
+StructuredBuffer<LAS12PDR3Point> _LAS12PDR3   : register(t1);
+
+
+PointXR ConvertPointToUnity(PointXR p, double x, double y, double z)
+{
+    // Transform to get the actual X, Y and Z coordinates.
+    double x_double = x * _LAS12Header[0].Xscalefactor + _LAS12Header[0].Xoffset;
+    double y_double = y * _LAS12Header[0].Yscalefactor + _LAS12Header[0].Yoffset;
+    double z_double = z * _LAS12Header[0].Zscalefactor + _LAS12Header[0].Zoffset;
+
+    double centroidX = ((_LAS12Header[0].MaxX - _LAS12Header[0].MinX) / 2) + _LAS12Header[0].MinX;
+    double centroidY = ((_LAS12Header[0].MaxY - _LAS12Header[0].MinY) / 2) + _LAS12Header[0].MinY;
+    double centroidZ = ((_LAS12Header[0].MaxZ - _LAS12Header[0].MinZ) / 2) + _LAS12Header[0].MinZ;
+    
+    // Center pointcloud at world origin
+    p.pos.x = x_double - centroidX;
+    p.pos.y = y_double - centroidY;
+    p.pos.z = z_double - _LAS12Header[0].MinZ;
+
+    // Swap Y and Z coordinates.
+    // Unity uses lefthanded coordinates, where Y points up.
+    // LAS uses righthanded, where Z points up.
+    float y_ = p.pos.y;
+    p.pos.y  = p.pos.z;
+    p.pos.z  = y_;
+
+    return p;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void LAS12PDR0(uint3 id : SV_DispatchThreadID)
+{
+    PointXR p = _Points[id.x];
+    LAS12PDR0Point las_point = _LAS12PDR0[id.x];
+
+    p = ConvertPointToUnity(p, las_point.X, las_point.Y, las_point.Z);
+
+    // Bit order on current machine (Windows 10) is little endian. So the bitshifts
+    // and bitwise operator look a bit strange.
+    p.intensityNormalized = las_point.Intensity_Bitfields_Classification & 65535;
+    p.intensityNormalized /= 65535.0;
+
+    p.classification = las_point.Intensity_Bitfields_Classification >> 24;
+
+    p.point_source_id = _LAS12PDR0[id.x].ScanAngleRank_UserData_PointSourceID >> 16;
+    
+    // No color in this point format. Set each color to one so that intensity 
+    // can be multiplied and give a grey scale point cloud.
+    p.color.x = 1;
+    p.color.y = 1;
+    p.color.z = 1;
+    p.color.w = 1; // Alpha, set to 1 for no transparency.
+
+    p.deleted  = 0; // Initialize
+    p.selected = 0; // Initialize
+    
+    p.id = 314; // Initialize with some cool value...
+	p.user_color = float4(0, 1.0f, 0, 1.0f);
+	p.scan_angle_rank = 0;
+	p.user_data = 0;
+	// p.point_source_id = 0;
+	p.gps_time = 0;
+	p.visible = 1;
+	p.padding01 = 0;
+	p.padding02 = 0;
+	p.padding03 = 0;
+
+    _Points[id.x] = p;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void LAS12PDR1(uint3 id : SV_DispatchThreadID)
+{
+    PointXR p = _Points[id.x];
+    p = ConvertPointToUnity(p, _LAS12PDR1[id.x].X, _LAS12PDR1[id.x].Y, _LAS12PDR1[id.x].Z);
+    
+    // Bit order on current machine (Windows 10) is little endian. So the bitshifts
+    // and bitwise operator look a bit strange.
+    p.intensityNormalized = _LAS12PDR1[id.x].Intensity_Bitfields_Classification & 65535;
+    p.intensityNormalized /= 65535.0;
+
+    p.classification = _LAS12PDR1[id.x].Intensity_Bitfields_Classification >> 24;
+
+    p.point_source_id = _LAS12PDR1[id.x].ScanAngleRank_UserData_PointSourceID >> 16;
+    
+    // No color in this point format. Set each color to one so that intensity
+    // can be multiplied and give a grey scale point cloud.
+    p.color.x = 1;
+    p.color.y = 1;
+    p.color.z = 1;
+    p.color.w = 1; // Alpha, set to 1 for no transparency.
+
+    p.deleted  = 0; // Initialize
+    p.selected = 0; // Initialize
+    
+    p.id = 314; // Initialize with some cool value...
+	p.user_color = float4(0, 1.0f, 0, 1.0f);
+	p.scan_angle_rank = 0;
+	p.user_data = 0;
+	// p.point_source_id = 0;
+	p.gps_time = 0;
+	p.visible = 1;
+	p.padding01 = 0;
+	p.padding02 = 0;
+	p.padding03 = 0;
+
+    _Points[id.x] = p;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void LAS12PDR2(uint3 id : SV_DispatchThreadID)
+{
+    PointXR p = _Points[id.x];
+    p = ConvertPointToUnity(p, _LAS12PDR2[id.x].X, _LAS12PDR2[id.x].Y, _LAS12PDR2[id.x].Z);
+    
+    // Bit order on current machine (INTEL CPU) is little endian. So the bitshifts
+    // and bitwise operator look a bit strange.
+    p.intensityNormalized = _LAS12PDR2[id.x].Intensity_Bitfields_Classification & 65535;
+    p.intensityNormalized /= 65535.0;
+
+    p.classification = _LAS12PDR2[id.x].Intensity_Bitfields_Classification >> 24;
+
+    p.point_source_id = _LAS12PDR2[id.x].ScanAngleRank_UserData_PointSourceID >> 16;
+
+    // Color should be in the range 0 - 65535. Not all LAS files follow this,
+    // some use 0 - 255. We can only account for standard interval. To much 
+    // processing otherwise.
+    p.color.x = _LAS12PDR2[id.x].Red_Green & 65535;
+    p.color.x /= 65535.0;
+
+    p.color.y = _LAS12PDR2[id.x].Red_Green >> 16;
+    p.color.y /= 65535.0;
+
+    p.color.z = _LAS12PDR2[id.x].Blue_Padding & 65535;
+    p.color.z /= 65535.0;
+
+    p.color.w = 1; // Alpha, set to 1 for no transparency.
+
+    p.deleted  = 0; // Initialize
+    p.selected = 0; // Initialize
+    
+    // Bitwise operation:
+    // ushort num  = 40927;  0x1001 1111 1101 1111 
+    // ushort mask = 255;    0x0000 0000 1111 1111
+    //                       0x0000 0000 1101 1111 is 223 in base 10.
+    // num & mask = 223
+
+    p.id = 314; // Initialize with some cool value...
+	p.user_color = float4(0, 1.0f, 0, 1.0f);
+	p.scan_angle_rank = 0;
+	p.user_data = 0;
+	// p.point_source_id = 0;
+	p.gps_time = 0;
+	p.visible = 1;
+	p.padding01 = 0;
+	p.padding02 = 0;
+	p.padding03 = 0;
+
+    _Points[id.x] = p;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void LAS12PDR3(uint3 id : SV_DispatchThreadID)
+{
+    PointXR p = _Points[id.x];
+    p = ConvertPointToUnity(p, _LAS12PDR3[id.x].X, _LAS12PDR3[id.x].Y, _LAS12PDR3[id.x].Z);
+
+    // Bit order on current machine (Windows 10) is little endian. So the bitshifts
+    // and bitwise operator looks a bit strange.
+    p.intensityNormalized  = _LAS12PDR3[id.x].Intensity_Bitfields_Classification & 65535;
+    p.intensityNormalized /= 65535.0;
+
+    p.classification = _LAS12PDR3[id.x].Intensity_Bitfields_Classification >> 24;
+
+    p.point_source_id = _LAS12PDR3[id.x].ScanAngleRank_UserData_PointSourceID >> 16;
+    // Color should be in the range 0 - 65535. Not all LAS files follow this,
+    // some use 0 - 255. We can only account for standard interval. To much 
+    // processing otherwise.
+    p.color.x  = _LAS12PDR3[id.x].Red_Green & 65535;
+    p.color.x /= 65535.0;
+
+    p.color.y  = _LAS12PDR3[id.x].Red_Green >> 16;
+    p.color.y /= 65535.0;
+
+    p.color.z  = _LAS12PDR3[id.x].Blue_Padding & 65535;
+    p.color.z /= 65535.0;
+
+    p.color.w  = 1; // Alpha, set to 1 for no transparency.
+
+    p.deleted  = 0; // Initialize
+    p.selected = 0; // Initialize
+    
+    // Bitwise operation:
+    // ushort num  = 40927;  0x1001 1111 1101 1111 
+    // ushort mask = 255;    0x0000 0000 1111 1111
+    //                       0x0000 0000 1101 1111 is 223 in base 10.
+    // num & mask = 223
+
+    p.id              = 314; // Initialize with some cool value...
+	p.user_color      = float4(0, 1.0f, 0, 1.0f);
+    p.scan_angle_rank = 0;
+    p.user_data       = 0;
+    p.gps_time        = 0;
+	p.visible         = 1;
+	p.padding01       = 0;
+	p.padding02		  = 0;
+	p.padding03       = 0;
+
+    _Points[id.x] = p;
+}
+

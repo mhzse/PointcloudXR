@@ -1,0 +1,23 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel RemoveDeletedPoints
+
+#define NUM_TREADS 1024
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+RWStructuredBuffer<PointXR>     _points        : register(u1);
+AppendStructuredBuffer<PointXR> _pruned_points : register(u2);
+RWStructuredBuffer<PointXR>     _VisiblePoints : register(u5);
+
+[numthreads(NUM_TREADS, 1, 1)]
+void RemoveDeletedPoints(uint3 id : SV_DispatchThreadID)
+{
+    PointXR pt = _points[id.x];
+    
+    if (pt.deleted == 0 && pt.pos.x != 0) 
+    {
+        _pruned_points.Append(pt);
+    }
+}
+

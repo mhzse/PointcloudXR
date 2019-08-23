@@ -1,0 +1,28 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel CountClasses
+#pragma kernel SetSelectedClass
+#define NUM_TREADS 1024
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+RWStructuredBuffer<PointXR>     _Points  : register(u6);
+RWStructuredBuffer<float>     _Classes : register(u7); // 0 - 255 possible values
+
+int _class_to_set;
+
+[numthreads(NUM_TREADS, 1, 1)]
+void CountClasses(uint3 id : SV_DispatchThreadID)
+{
+    int index = _Points[id.x].classification;
+    _Classes[index] = 1.0f;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SetSelectedClass(uint3 id : SV_DispatchThreadID)
+{
+    if(_Points[id.x].selected == 1)
+    {
+        _Points[id.x].classification = _class_to_set;
+    }
+}

@@ -1,0 +1,122 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 1946604318993776}
+  m_IsPrefabAsset: 1
+--- !u!1 &1946604318993776
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4352882902686782}
+  - component: {fileID: 33417738292028026}
+  - component: {fileID: 23358596000145366}
+  - component: {fileID: 114661840818486338}
+  m_Layer: 0
+  m_Name: EditTool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4352882902686782
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1946604318993776}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &23358596000145366
+MeshRenderer:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1946604318993776}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 4294967295
+  m_Materials:
+  - {fileID: 2100000, guid: 0d7bdb3efb56fba4eaaa73f2dd658902, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+--- !u!33 &33417738292028026
+MeshFilter:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1946604318993776}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114661840818486338
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1946604318993776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add0c11b14ed8d141978f12ae13413c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Parent: {fileID: 0}
+  _ParentOffsetZ: 0.045
+  _point_cloud_manager: {fileID: 0}
+  _SpeedDistanceFactor: 0.5
+  _Material: {fileID: 2100000, guid: 77d90a810b2304e4fa7d188b53c799db, type: 2}
+  _DeleteColor: {r: 0, g: 0, b: 0, a: 0}
+  _DeleteRimColor: {r: 1, g: 0, b: 0, a: 0}
+  _SelectColor: {r: 1, g: 0, b: 0, a: 0}
+  _SelectRimColor: {r: 1, g: 0, b: 0, a: 0}
+  _DeselectColor: {r: 0, g: 1, b: 0.0902257, a: 0}
+  _DeselectRimColor: {r: 0, g: 0.8745098, b: 0.14901961, a: 0}
+  _InactiveColor: {r: 0.21176471, g: 0.21176471, b: 0.21176471, a: 0}
+  _Offset: 0
+  _OffsetMin: 0.025
+  _OffsetMinDynamic: 0
+  _OffsetMax: 60
+  _Scale: 0
+  _ScaleMin: 0.05
+  _ScaleMax: 5
+  _ScaleMaxDynamic: 0
+  _SpeedScaleFactor: 0.1
+  _IsActive: 0
+  _SelectedPointColor: {r: 1, g: 0, b: 0, a: 0}
+  _ActionSelectedEnhancedView: 0
+  _edit_tool_compute: {fileID: 7200000, guid: 5a3eebceec63d6649be0239d2ef67e4d, type: 3}

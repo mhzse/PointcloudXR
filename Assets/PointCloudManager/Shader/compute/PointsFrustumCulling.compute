@@ -1,0 +1,52 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel FrustumCulling
+
+#define NUM_TREADS 1024
+#pragma enable_d3d11_debug_symbols
+
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+RWStructuredBuffer<PointXR>      _Points        : register(u6);
+AppendStructuredBuffer<PointXR>  _VisiblePoints : register(u5);
+
+float3   _PlayerPosition;
+uint     _NumPoints;
+float4x4 _VP;
+float    _Margin = 0;
+float    _LOD1Distance;
+bool     _culling_enabled;
+
+[numthreads(NUM_TREADS, 1, 1)]
+void FrustumCulling(uint3 id : SV_DispatchThreadID)
+{
+    PointXR pt = _Points[id.x];
+    
+    if(_culling_enabled)
+    {
+    
+        float4 p = mul(_VP, float4(pt.pos, 1));
+        if (
+	            p.x <= (p.w)
+	            &&
+	            p.x >= -(p.w)
+	            &&
+	            id.x < (_NumPoints)
+	            &&
+	            p.y <= (p.w)
+	            &&
+	            p.y >= -(p.w)
+	            &&
+	            p.z >= 0
+	    )
+        {
+            pt.id = id.x;
+            _VisiblePoints.Append(pt);
+        }
+    }
+    else
+    {
+        _VisiblePoints.Append(pt);
+    }
+}

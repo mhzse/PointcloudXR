@@ -1,0 +1,124 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel PCXR_TO_LAS14PDR7
+#define NUM_TREADS 1024
+#pragma enable_d3d11_debug_symbols
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+struct LAS14PDR7Point
+{
+    int    X; // 4
+    int    Y; // 4
+    int    Z; // 4
+    half   intensity; // 2
+    uint   ReturnNumber_NumberOfReturns_ClassificationFlags_ScannerChannel_ScanDirectionFlag_EdgeOfFlightLine; // 2
+    half   Classification_UserData; // 1 + 1
+    half   ScanAngle; // 2
+    half   PointSourceID; // 2
+    double GPSTime; // 8 bytes
+    half   Red; // 2
+    half   Green; // 2
+    half   Blue; // 2 bytes 
+}; // 36 bytes
+
+struct LAS12Header
+{
+	double Xscalefactor;
+	double Yscalefactor;
+	double Zscalefactor;
+	double Xoffset;
+	double Yoffset;
+	double Zoffset;
+	double MaxX;
+	double MinX;
+	double MaxY;
+	double MinY;
+	double MaxZ;
+	double MinZ;
+};
+
+RWStructuredBuffer<PointXR>        _Points      : register(u2);
+RWStructuredBuffer<LAS14PDR7Point> _LAS14PDR7   : register(u1);
+StructuredBuffer<LAS12Header>      _LAS12Header : register(t5);
+
+LAS14PDR7Point PointToLAS(PointXR p)
+{
+    LAS14PDR7Point las_point;
+
+	// Transform point to LAS X, Y and Z coordinates.
+	double x_double = (double)p.pos.x - _LAS12Header[0].Xoffset;
+	double y_double = (double)p.pos.y - _LAS12Header[0].Yoffset;
+	double z_double = (double)p.pos.z - _LAS12Header[0].Zoffset;
+
+	x_double = x_double / _LAS12Header[0].Xscalefactor;
+	y_double = y_double / _LAS12Header[0].Yscalefactor;
+	z_double = z_double / _LAS12Header[0].Zscalefactor;
+
+	double centroidX = ((_LAS12Header[0].MaxX - _LAS12Header[0].MinX) / 2) + _LAS12Header[0].MinX;
+	double centroidY = ((_LAS12Header[0].MaxY - _LAS12Header[0].MinY) / 2) + _LAS12Header[0].MinY;
+	double centroidZ = ((_LAS12Header[0].MaxZ - _LAS12Header[0].MinZ) / 2) + _LAS12Header[0].MinZ;
+
+	// Reset pointcloud from world origin
+	x_double = x_double + centroidX;
+	y_double = y_double + centroidY;
+	z_double = z_double + _LAS12Header[0].MinZ;
+
+	// Swap Y and Z coordinates.
+	// Unity uses lefthanded coordinates, where Y points up.
+	// LAS uses righthanded, where Z points up.
+	double y_ = y_double;
+	y_double  = z_double;
+	z_double = y_;
+
+	las_point.X = x_double;
+	las_point.Y = y_double;
+	las_point.Z = z_double;
+
+	las_point.intensity  = 0;
+    las_point.ReturnNumber_NumberOfReturns_ClassificationFlags_ScannerChannel_ScanDirectionFlag_EdgeOfFlightLine = 0;
+    las_point.Classification_UserData = 0;
+    las_point.ScanAngle = 0;
+    las_point.PointSourceID = 0;
+    las_point.GPSTime = 0;
+    las_point.Red = 0;
+    las_point.Green = 0;
+    las_point.Blue = 0;
+
+	return las_point;
+}
+
+// Convert PointXR data to LAS 1.4 PDR7
+[numthreads(NUM_TREADS, 1, 1)]
+void PCXR_TO_LAS14PDR7(uint3 id : SV_DispatchThreadID)
+{
+	PointXR p = _Points[id.x];
+    LAS14PDR7Point las_point = PointToLAS(p); // Convert coordinates X, Y and Z to LAS format.
+    
+	// uint Intensity_Bitfields_Classification; // 2 + 1 + 1
+	// 0x1111 1111 1111 1111 0000 0000 1111 1111
+	//   |    Intensity     |Bitfields| Classification
+	
+	// LSB
+	// uint Classification_Bitfields_Intensity 
+	// 0x1111 1111 0000 0000 1111 1111
+	//   | Class   |  Bit    |  Intensity
+	
+	// Scale up to LAS range
+    las_point.intensity = p.intensityNormalized * 65535;
+
+    las_point.Classification_UserData = (half)p.classification;
+
+	// Combine intensity and classification in the same UINT
+    las_point.ScanAngle = 0;
+
+    las_point.PointSourceID = 0;
+
+	las_point.GPSTime = 0;
+    
+    las_point.Red   = p.color.x * 65535;
+    las_point.Green = p.color.y * 65535;
+    las_point.Blue  = p.color.z * 65535;
+
+    _LAS14PDR7[id.x] = las_point;
+}

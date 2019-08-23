@@ -1,0 +1,172 @@
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+#pragma kernel SelectPointsInList
+#pragma kernel SelectInverse
+#pragma kernel SelectNone
+#pragma kernel SelectByClass
+#pragma kernel DeleteSelected
+#pragma kernel DeleteNone
+#pragma kernel TogglePointClassVisibility
+#pragma kernel ColorByClass
+#pragma kernel ColorByHigth
+#pragma kernel ColorByIntensity
+#pragma kernel ColorByNone
+#pragma kernel SwapYZ
+#pragma kernel ColorByPointsourceID
+#pragma kernel FindSelectedPoints
+#pragma kernel GetSelectedPoints
+
+#define NUM_TREADS 1024
+
+#include "Assets/PointCloudManager/Shader/include/PointCloudXR_include.cginc"
+
+RWStructuredBuffer<PointXR>     _Points                : register(u6);
+RWStructuredBuffer<float>       _points_to_select      : register(u7);
+AppendStructuredBuffer<int>     _selected_points_index : register(u5);
+AppendStructuredBuffer<PointXR> _selected_points       : register(u4);
+
+RWStructuredBuffer<int> _selected_points_index_read : register(u5);
+
+int    _selection_class;
+float  _toggle_class;
+
+float4 _class_colors[256];
+float4 _pointsource_id_colors[2048];
+ 
+// ColorByHeigth parameters
+float4 _color_0;
+float4 _color_1;
+float4 _color_2;
+float4 _color_3;
+float  _hight_interval;
+float  _min_y;
+
+int    _points_to_select_length;
+
+[numthreads(NUM_TREADS, 1, 1)]
+void GetSelectedPoints(uint3 id : SV_DispatchThreadID)
+{
+	if (_Points[id.x].selected)
+	{
+		_selected_points.Append(_Points[id.x]);
+	}
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void FindSelectedPoints(uint3 id : SV_DispatchThreadID)
+{
+	if (_Points[id.x].selected)
+	{
+		_selected_points_index.Append(id.x); 
+	}
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SelectPointsInList(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x < _points_to_select_length) 
+    {
+        int point_id = 0;
+        point_id = (int)_points_to_select[id.x]; 
+        _Points[point_id].selected = 1;
+    }
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SelectInverse (uint3 id : SV_DispatchThreadID)
+{
+    _Points[id.x].selected = !(_Points[id.x].selected);
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void DeleteSelected(uint3 id : SV_DispatchThreadID)
+{
+    if (!_Points[id.x].deleted)
+    {
+        _Points[id.x].deleted = _Points[id.x].selected;
+    }
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SelectNone(uint3 id : SV_DispatchThreadID)
+{
+    _Points[id.x].selected = 0.0f;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void DeleteNone(uint3 id : SV_DispatchThreadID)
+{
+    _Points[id.x].deleted = 0.0f;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SelectByClass(uint3 id : SV_DispatchThreadID)
+{
+    _Points[id.x].selected = (_Points[id.x].classification == _selection_class);
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void TogglePointClassVisibility(uint3 id : SV_DispatchThreadID)
+{
+	PointXR pt = _Points[id.x];
+    if (pt.classification == _toggle_class)
+    {
+        if (pt.visible == 1)
+        {
+            _Points[id.x].visible = 0;
+        }
+        else
+        {
+            _Points[id.x].visible = 1;
+        }
+    }
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void ColorByClass(uint3 id : SV_DispatchThreadID)
+{
+	float classification     = _Points[id.x].classification; 
+	_Points[id.x].user_color = _class_colors[classification];
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void ColorByPointsourceID(uint3 id : SV_DispatchThreadID)
+{
+	float point_source_id    = _Points[id.x].point_source_id;
+	_Points[id.x].user_color = _pointsource_id_colors[point_source_id];
+} 
+
+[numthreads(NUM_TREADS, 1, 1)]
+void ColorByHigth(uint3 id : SV_DispatchThreadID)
+{
+    float y = (_Points[id.x].pos.y - _min_y) / _hight_interval;
+
+    float  y_scaled      = y * 3;
+    float4 gradient_2_3  = lerp(_color_2, _color_3,      saturate(y_scaled - 1.6f));
+    float4 gradient_1_23 = lerp(_color_1, gradient_2_3,  saturate(y_scaled - 0.8f));
+    float4 gradient      = lerp(_color_0, gradient_1_23, saturate(y_scaled - 0.0f));
+    
+    _Points[id.x].user_color = gradient;
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void ColorByIntensity(uint3 id : SV_DispatchThreadID)
+{
+    float intensity = _Points[id.x].intensityNormalized + 0.2f;
+    _Points[id.x].user_color = float4(intensity, intensity, intensity, 1);
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void ColorByNone(uint3 id : SV_DispatchThreadID)
+{
+	_Points[id.x].user_color = float4(0.2f, 0.2f, 0.2f, 1);
+}
+
+[numthreads(NUM_TREADS, 1, 1)]
+void SwapYZ(uint3 id : SV_DispatchThreadID)
+{
+	float y_ = _Points[id.x].pos.y;
+	_Points[id.x].pos.y = _Points[id.x].pos.z;
+	_Points[id.x].pos.z = y_;
+}
