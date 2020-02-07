@@ -30,11 +30,17 @@ public class ButtonXR : MonoBehaviour
     // Fired when the button is pressed
     public event EventHandler<ButtonToggleEvent> OnToggleEvent; 
 
+    //[Range(0, 1)]
     private float _HoverEmissionStrengthRed = 0;
+    //[Range(0, 1)]
     private float _HoverEmissionStrengthGreen = 0;
+    //[Range(0, 1)]
     private float _HoverEmissionStrengthBlue = 0;
+    //[Range(0, 1)]
     private float _ButtonPressEmissionStrengthRed = 0;
+    //[Range(0, 1)]
     private float _ButtonPressEmissionStrengthGreen = 0;
+    //[Range(0, 1)]
     private float _ButtonPressEmissionStrengthBlue = 0;
 
     private bool _Active;
@@ -250,6 +256,7 @@ public class ButtonXR : MonoBehaviour
     {
         DebugPrint(GetCurrentMethod());
 
+        // TODO: A quick fix fore a more saturated white color on BACK buttons...refactor this
         if (_CustomColor)
         {
             _Text.color = new Color(1f, 1f, 1f);
@@ -359,7 +366,7 @@ public class ButtonXR : MonoBehaviour
                 _Base.GetComponent<Renderer>().material.SetColor("_Color", _ColorActive);
                 _Base.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(_ButtonPressEmissionStrengthRed, _ButtonPressEmissionStrengthGreen, _ButtonPressEmissionStrengthBlue));
 
-                _Text.color = new Color(0f, 0.6f, 0f);
+                _Text.color = new Color(0f, 0.6f, 0f);// Color.green;
                 _Text.GetComponent<Renderer>().material.SetColor("_GlowColor", new Color(0f, 1f, 0f));
             }
             else
@@ -367,7 +374,7 @@ public class ButtonXR : MonoBehaviour
                 _Base.GetComponent<Renderer>().material.SetColor("_Color", _ColorInactive);
                 _Base.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(_ButtonPressEmissionStrengthGreen, _ButtonPressEmissionStrengthGreen, _ButtonPressEmissionStrengthGreen));
 
-                _Text.color = new Color(0.5f, 0.5f, 0.5f);
+                _Text.color = new Color(0.5f, 0.5f, 0.5f);// Color.white;
                 _Text.GetComponent<Renderer>().material.SetColor("_GlowColor", new Color(1f, 1f, 1f));
             }
 
@@ -384,6 +391,7 @@ public class ButtonXR : MonoBehaviour
     {
         if (_PulseGlowOn && _Active)
         {
+            // Animate _ColorActive
             Color lerpedColor = Color.Lerp(Color.black, Color.green, Mathf.PingPong(Time.time, 1));
             _Base.GetComponent<Renderer>().material.SetColor("_Color", lerpedColor);
         }

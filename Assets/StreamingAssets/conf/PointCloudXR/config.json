@@ -1,10 +1,10 @@
 {
   "paths": {
-    "root_file_path": "C:\\POINT_CLOUD_XR_DATA"
+    "root_file_path": ""
   },
 
   "config_generate_points": {
-    "points_to_generate": 2048,
-    "points_spacing": 0.1
+    "points_to_generate": 1000000,
+    "points_spacing": 0.05
   }
 }

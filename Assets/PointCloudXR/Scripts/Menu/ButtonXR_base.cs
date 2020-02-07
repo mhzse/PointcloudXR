@@ -49,7 +49,6 @@ public class ButtonXR_base : MonoBehaviour
 
             float pushZ = transform.localPosition.z - (_OtherTriggerEnterLocalPosition.z - otherLocal.z);
             float threshold = -0.005f;
-
             if (pushZ < 0 && pushZ >= threshold)
             {
                 transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, pushZ);

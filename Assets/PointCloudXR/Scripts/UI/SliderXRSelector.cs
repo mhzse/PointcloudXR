@@ -57,11 +57,6 @@ public class SliderXRSelector : MonoBehaviour
         return ((transform.localPosition.x + _MaxX) / _Length) * 100f;
     }
 
-	void Update ()
-    {
-		
-	}
-
     void ProximityEnterEvent(object sender, EventArgs e)
     {
         _SelectorMesh.GetComponent<Renderer>().material.SetColor("_EmissionColor", new Color(0, _SelectorProximityEmissionStrengthGreen, 0));

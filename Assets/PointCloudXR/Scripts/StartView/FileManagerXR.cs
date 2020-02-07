@@ -36,7 +36,7 @@ public class FileManagerXR : MonoBehaviour
 
     private string _ReadFileName = string.Empty;
 
-    private StartMode  _StartMode  = StartMode.NONE;
+    private StartMode  _StartMode = StartMode.NONE;
     private ImportMode _ImportMode = ImportMode.NONE;
 
     void Start()

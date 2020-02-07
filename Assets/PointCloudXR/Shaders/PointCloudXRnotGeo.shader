@@ -168,7 +168,6 @@ Shader "SLU/PointCloudXRnotGeo"
 		FragmentInput fragIn;
 
 		fragIn.pos = UnityObjectToClipPos(float4(computeBuffer[id].pos, 1));
-		//fragIn.pos = mul(unity_ObjectToWorld, float4(computeBuffer[id].pos, 1));
 
 		fragIn.classification = computeBuffer[id].classification;
 
@@ -177,7 +176,7 @@ Shader "SLU/PointCloudXRnotGeo"
 		if (_EditToolActive == 1)
 		{
 			float distanceFromEditTool = length(_EditToolPos.xyz - (fragIn.pos.xyz + computeBufferTranslatedPoints[id].offset.xyz + computeBufferOffsetPoints[id].offset.xyz));
-			if (distanceFromEditTool <= _EditToolRadius /*&& computeBuffer[id].classification == _VegitationClass*/)
+			if (distanceFromEditTool <= _EditToolRadius)
 			{
 				if (_EditToolDelete)
 				{
@@ -218,14 +217,11 @@ Shader "SLU/PointCloudXRnotGeo"
 
 			if (_TransformSelectedPoints == 1)
 			{
-				computeBufferTranslatedPoints[id].offset.x = _SelectedPointsOffset.x;// +computeBufferOffsetPoints[id].offset.x;
-				computeBufferTranslatedPoints[id].offset.y = _SelectedPointsOffset.y;// +computeBufferOffsetPoints[id].offset.y;
-				computeBufferTranslatedPoints[id].offset.z = _SelectedPointsOffset.z;// +computeBufferOffsetPoints[id].offset.z;
+				computeBufferTranslatedPoints[id].offset.x = _SelectedPointsOffset.x;
+				computeBufferTranslatedPoints[id].offset.y = _SelectedPointsOffset.y;
+				computeBufferTranslatedPoints[id].offset.z = _SelectedPointsOffset.z;
 			}
 		}
-		/*fragIn.pos.x += computeBufferTranslatedPoints[id].offset.x + computeBufferOffsetPoints[id].offset.x;
-		fragIn.pos.y += computeBufferTranslatedPoints[id].offset.y + computeBufferOffsetPoints[id].offset.y;
-		fragIn.pos.z += computeBufferTranslatedPoints[id].offset.z + computeBufferOffsetPoints[id].offset.z;*/
 
 
 		fragIn.color = (fragIn.color + _Brightness) * _ColorIntensity;

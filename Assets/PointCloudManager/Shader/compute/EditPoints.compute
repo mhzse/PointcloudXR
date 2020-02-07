@@ -33,7 +33,7 @@ float  _toggle_class;
 
 float4 _class_colors[256];
 float4 _pointsource_id_colors[2048];
- 
+
 // ColorByHeigth parameters
 float4 _color_0;
 float4 _color_1;
@@ -47,34 +47,34 @@ int    _points_to_select_length;
 [numthreads(NUM_TREADS, 1, 1)]
 void GetSelectedPoints(uint3 id : SV_DispatchThreadID)
 {
-	if (_Points[id.x].selected)
-	{
-		_selected_points.Append(_Points[id.x]);
-	}
+    if (_Points[id.x].selected)
+    {
+        _selected_points.Append(_Points[id.x]);
+    }
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
 void FindSelectedPoints(uint3 id : SV_DispatchThreadID)
 {
-	if (_Points[id.x].selected)
-	{
-		_selected_points_index.Append(id.x); 
-	}
+    if (_Points[id.x].selected)
+    {
+        _selected_points_index.Append(id.x);
+    }
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
 void SelectPointsInList(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x < _points_to_select_length) 
+    if (id.x < _points_to_select_length)
     {
         int point_id = 0;
-        point_id = (int)_points_to_select[id.x]; 
+        point_id = (int)_points_to_select[id.x];
         _Points[point_id].selected = 1;
     }
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
-void SelectInverse (uint3 id : SV_DispatchThreadID)
+void SelectInverse(uint3 id : SV_DispatchThreadID)
 {
     _Points[id.x].selected = !(_Points[id.x].selected);
 }
@@ -109,7 +109,7 @@ void SelectByClass(uint3 id : SV_DispatchThreadID)
 [numthreads(NUM_TREADS, 1, 1)]
 void TogglePointClassVisibility(uint3 id : SV_DispatchThreadID)
 {
-	PointXR pt = _Points[id.x];
+    PointXR pt = _Points[id.x];
     if (pt.classification == _toggle_class)
     {
         if (pt.visible == 1)
@@ -126,27 +126,27 @@ void TogglePointClassVisibility(uint3 id : SV_DispatchThreadID)
 [numthreads(NUM_TREADS, 1, 1)]
 void ColorByClass(uint3 id : SV_DispatchThreadID)
 {
-	float classification     = _Points[id.x].classification; 
-	_Points[id.x].user_color = _class_colors[classification];
+    float classification = _Points[id.x].classification;
+    _Points[id.x].user_color = _class_colors[classification];
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
 void ColorByPointsourceID(uint3 id : SV_DispatchThreadID)
 {
-	float point_source_id    = _Points[id.x].point_source_id;
-	_Points[id.x].user_color = _pointsource_id_colors[point_source_id];
-} 
+    float point_source_id = _Points[id.x].point_source_id;
+    _Points[id.x].user_color = _pointsource_id_colors[point_source_id];
+}
 
 [numthreads(NUM_TREADS, 1, 1)]
 void ColorByHigth(uint3 id : SV_DispatchThreadID)
 {
     float y = (_Points[id.x].pos.y - _min_y) / _hight_interval;
 
-    float  y_scaled      = y * 3;
-    float4 gradient_2_3  = lerp(_color_2, _color_3,      saturate(y_scaled - 1.6f));
-    float4 gradient_1_23 = lerp(_color_1, gradient_2_3,  saturate(y_scaled - 0.8f));
-    float4 gradient      = lerp(_color_0, gradient_1_23, saturate(y_scaled - 0.0f));
-    
+    float  y_scaled = y * 3;
+    float4 gradient_2_3 = lerp(_color_2, _color_3, saturate(y_scaled - 1.6f));
+    float4 gradient_1_23 = lerp(_color_1, gradient_2_3, saturate(y_scaled - 0.8f));
+    float4 gradient = lerp(_color_0, gradient_1_23, saturate(y_scaled - 0.0f));
+
     _Points[id.x].user_color = gradient;
 }
 
@@ -160,13 +160,13 @@ void ColorByIntensity(uint3 id : SV_DispatchThreadID)
 [numthreads(NUM_TREADS, 1, 1)]
 void ColorByNone(uint3 id : SV_DispatchThreadID)
 {
-	_Points[id.x].user_color = float4(0.2f, 0.2f, 0.2f, 1);
+    _Points[id.x].user_color = float4(0.2f, 0.2f, 0.2f, 1);
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
 void SwapYZ(uint3 id : SV_DispatchThreadID)
 {
-	float y_ = _Points[id.x].pos.y;
-	_Points[id.x].pos.y = _Points[id.x].pos.z;
-	_Points[id.x].pos.z = y_;
+    float y_ = _Points[id.x].pos.y;
+    _Points[id.x].pos.y = _Points[id.x].pos.z;
+    _Points[id.x].pos.z = y_;
 }

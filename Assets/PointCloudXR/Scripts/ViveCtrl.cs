@@ -27,6 +27,7 @@ public class ViveCtrl : MonoBehaviour
     private double _TriggerVal;
     private bool   _IsMoving = false;
 
+                       
     public float _ViveMoveForce = 1;
     public float _MaxSpeed = 1;
     public float _Speed = 0;
@@ -64,7 +65,7 @@ public class ViveCtrl : MonoBehaviour
         _DirectionArrow = Instantiate(_DirectionArrowPrefab);
         _DirectionArrow.transform.parent = _RightHand.transform;
         _DirectionArrow.transform.localEulerAngles = new Vector3(58f, 0f, 0f);
-        _DirectionArrow.transform.localPosition = new Vector3(0f, -0.0609f, 0.038f);
+        _DirectionArrow.transform.localPosition = new Vector3(0f, -0.0609f, 0.038f); // TODO: Do not hard code this
         _DirectionArrow.SetActive(false);
         
         _PlayerHeadTransform = _VRCamera.transform;
@@ -75,6 +76,8 @@ public class ViveCtrl : MonoBehaviour
             _EditTool.OnOffsetAccepted += OnOffsetAcceptedListener;
             _EditTool.OnScaleAccepted  += OnScaleAcceptedListener;
         }
+
+        
     } 
 
     public void SetPlayerPosition(Vector3 pos)
@@ -86,7 +89,6 @@ public class ViveCtrl : MonoBehaviour
     {
         return _VRCamera;
     }
-
     public PointCloudManager PointCloudManagerGet()
     {
         return _PointCloudManager.GetComponent<PointCloudManager>();
@@ -173,7 +175,6 @@ public class ViveCtrl : MonoBehaviour
     {
         return _VRCamera;
     }
-     
     public bool EditToolGetActive()
     {
         return _EditTool.GetActive();
@@ -189,6 +190,7 @@ public class ViveCtrl : MonoBehaviour
 
             SteamVR_Actions.pointcloudview.EditToolToggleMode.AddOnChangeListener(EditToolTogleModeButtonPress,      SteamVR_Input_Sources.Any);
 
+
             SteamVR_Actions.pointcloudview.EditToolMoveForward.AddOnUpdateListener(EditToolMoveForwardButtonPress,   SteamVR_Input_Sources.Any);
             SteamVR_Actions.pointcloudview.EditToolMoveBackward.AddOnUpdateListener(EditToolMoveBackwardButtonPress, SteamVR_Input_Sources.Any);
             SteamVR_Actions.pointcloudview.EditToolScaleUp.AddOnUpdateListener(EditToolScaleUpButtonPress,           SteamVR_Input_Sources.Any);
@@ -197,6 +199,7 @@ public class ViveCtrl : MonoBehaviour
         else
         {
             MenuButtonLeftMaterialReset();
+
             SteamVR_Actions.pointcloudview.EditToolToggleMode.RemoveOnChangeListener(EditToolTogleModeButtonPress,      SteamVR_Input_Sources.Any);
             SteamVR_Actions.pointcloudview.EditToolMoveForward.RemoveOnUpdateListener(EditToolMoveForwardButtonPress,   SteamVR_Input_Sources.Any);
             SteamVR_Actions.pointcloudview.EditToolMoveBackward.RemoveOnUpdateListener(EditToolMoveBackwardButtonPress, SteamVR_Input_Sources.Any);
@@ -292,6 +295,8 @@ public class ViveCtrl : MonoBehaviour
         return _EditTool.GetAction();
     }
 
+ 
+
     public void UserPositionReset()
     {
         _Player.transform.position = _PointCloudManager.GetUserStartPosition();
@@ -301,13 +306,13 @@ public class ViveCtrl : MonoBehaviour
     {
         _LeftHand.TriggerHapticPulse(500);
     }
-
     void FixedUpdate()
     {
         _Player.GetComponent<Rigidbody>().mass = _ViveMass;
 
-        _TriggerVal = 0;
 
+        // The trigger is noisy, looks like only the first digit is reliable.
+        _TriggerVal = 0;
         if(_throttle_action != null && _throttle_action.GetActive(SteamVR_Input_Sources.Any))
         {
             float value = (float)Math.Round(_throttle_action.GetAxis(SteamVR_Input_Sources.Any), 1);

@@ -43,7 +43,6 @@ Shader "SLU/PointCloud"
 
 		[Header(Nearest Point)][Toggle] _TransformSelectedPoints("Transform selected points", int) = 0
 		_SelectedPointsOffset("Points offset", Vector) = (0, 0, 0)
-		_NearestPointID("Nearest point ID", int) = 0
 	}
 
 	SubShader
@@ -73,7 +72,7 @@ Shader "SLU/PointCloud"
 
 			RWStructuredBuffer<float>	computeBufferCom			: register(u3);
 			RWStructuredBuffer<PointXR>	pointsInFrustum             : register(u5);
-			RWStructuredBuffer<PointXR>	_points_all                 : register(u6); // Use this to update the pointcloud
+			RWStructuredBuffer<PointXR>	_points_all                 : register(u6);
 
 			struct VertOut
 			{
@@ -154,7 +153,6 @@ Shader "SLU/PointCloud"
 			float4  _SelectedPointColor;
 			int		_TransformSelectedPoints;
 			float3  _SelectedPointsOffset;
-			int     _NearestPointID;
 
 
 			VertOut vert(uint id: SV_VertexID)
@@ -170,18 +168,11 @@ Shader "SLU/PointCloud"
 				fragIn.classification      = _points_all[id].classification;
 				fragIn.intensityNormalized = _points_all[id].intensityNormalized;
 
+
 				fragIn.uv           = float2(0, 0);
 				fragIn.viewposition = float4(0, 0, 0, 0);
 				fragIn.radius       = _PointRadius;
 				fragIn.sv_vertex_id = id;
-			
-				if (_ShowNearestPointFound)
-				{
-					if (fragIn.id == _NearestPointID)
-					{
-						fragIn.color = float4(1, 0, 0, 1);
-					}
-				}
 
 				return fragIn;
 			}
@@ -242,6 +233,7 @@ Shader "SLU/PointCloud"
 				triStream.Append(gout3);
 			}
 
+
 		    // For Circles
 			FragmentOutput frag(GeoOut geoOut)
 			{
@@ -259,9 +251,9 @@ Shader "SLU/PointCloud"
 
 				fragOut.depth = pos.z;
 
+
 				fragOut.color = (geoOut.color - uvlen * _ZDepth) * _Circles + geoOut.color * !_Circles;
 				fragOut.color = fragOut.color * geoOut.intensityNormalized * _AddIntensityValueToColor + fragOut.color * !_AddIntensityValueToColor;
-
 				return fragOut;
 			}
 			ENDCG

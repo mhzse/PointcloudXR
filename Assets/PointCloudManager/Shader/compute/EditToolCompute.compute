@@ -15,27 +15,27 @@ float  _tool_radius;
 
 bool InsideRadius(float3 point_position)
 {
-	float3 dist;
-	dist.x = _tool_position.x - point_position.x;
-	dist.y = _tool_position.y - point_position.y;
-	dist.z = _tool_position.z - point_position.z;
+    float3 dist;
+    dist.x = _tool_position.x - point_position.x;
+    dist.y = _tool_position.y - point_position.y;
+    dist.z = _tool_position.z - point_position.z;
 
-	float dot = dist.x * dist.x + dist.y * dist.y + dist.z * dist.z;
+    float dot = dist.x * dist.x + dist.y * dist.y + dist.z * dist.z;
 
-	return dot < (_tool_radius * _tool_radius);
+    return dot < (_tool_radius * _tool_radius);
 }
 
 [numthreads(NUM_TREADS, 1, 1)]
 void SelectPoints(uint3 id : SV_DispatchThreadID)
 {
-	if (InsideRadius(_points_buffer[id.x].pos))
-	{
-		if (_points_buffer[id.x].selected == 0 && _points_buffer[id.x].deleted == 0)
-		{
-			_comunication_buffer[0] = 1.0f; // Set edit tool collision
-			_points_buffer[id.x].selected = 1.0f; 
-		}
-	}
+    if (InsideRadius(_points_buffer[id.x].pos))
+    {
+        if (_points_buffer[id.x].selected == 0 && _points_buffer[id.x].deleted == 0)
+        {
+            _comunication_buffer[0] = 1.0f; // Set edit tool collision
+            _points_buffer[id.x].selected = 1.0f;
+        }
+    }
 }
 
 [numthreads(NUM_TREADS, 1, 1)]

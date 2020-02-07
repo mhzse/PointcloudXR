@@ -15,14 +15,14 @@
 
 struct PointPos
 {
-	float3 pos;
-	uint   id;
+    float3 pos;
+    uint   id;
 };
 
 struct PointDistance
 {
-	float dist;
-	uint  id;
+    float dist;
+    uint  id;
 };
 
 RWStructuredBuffer<PointXR>	       _PointsBuffer;
@@ -54,7 +54,7 @@ void CreateSelectedPointsAppendBuffer(uint3 tid : SV_DispatchThreadID)
 [numthreads(NUM_THREADS, 1, 1)]
 void CreatePointsSelectedPositionBuffer(uint3 tid : SV_DispatchThreadID)
 {
-    if(tid.x < _selected_points_count)
+    if (tid.x < _selected_points_count)
     {
         PointXR pcxr = _selected_points_consume.Consume();
         PointPos pp;
@@ -68,29 +68,29 @@ void CreatePointsSelectedPositionBuffer(uint3 tid : SV_DispatchThreadID)
 [numthreads(NUM_THREADS, 1, 1)]
 void CreatePointsPositionBuffer(uint3 tid : SV_DispatchThreadID, uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID)
 {
-	uint group_global = gid.x * NUM_THREADS;
-	uint thread_global = group_global + gtid.x;
+    uint group_global = gid.x * NUM_THREADS;
+    uint thread_global = group_global + gtid.x;
 
-	PointPos pp;
-	pp.pos = _PointsBuffer[thread_global].pos;
-	pp.id = tid.x;
+    PointPos pp;
+    pp.pos = _PointsBuffer[thread_global].pos;
+    pp.id = tid.x;
 
-	_PointsPositionBuffer[thread_global] = pp;
+    _PointsPositionBuffer[thread_global] = pp;
 }
 
 [numthreads(NUM_THREADS, 1, 1)]
 void ComputeDistanceToPoints(uint3 tid : SV_DispatchThreadID, uint3 gtid : SV_GroupThreadID, uint3 gid : SV_GroupID)
 {
-	uint group_global = gid.x * NUM_THREADS;
-	uint thread_global = group_global + gtid.x;
-    
-	PointPos pp = _PointsPositionBuffer[thread_global];
+    uint group_global = gid.x * NUM_THREADS;
+    uint thread_global = group_global + gtid.x;
 
-	PointDistance pd;
-	pd.id = pp.id;
-	pd.dist = length(_NearestPointFromPosition - pp.pos);
+    PointPos pp = _PointsPositionBuffer[thread_global];
 
-	_DistanceBuffer[thread_global] = pd;
+    PointDistance pd;
+    pd.id = pp.id;
+    pd.dist = length(_NearestPointFromPosition - pp.pos);
+
+    _DistanceBuffer[thread_global] = pd;
 }
 
 #define NUM_THREADS_MIN_DIST 1024
@@ -99,10 +99,10 @@ groupshared PointDistance sdata[NUM_THREADS_MIN_DIST];
 // See if the point at offset is closer, and replace current point if it is.
 void Tester(uint threadGroupId, uint bufferOffset)
 {
-	if (sdata[threadGroupId + bufferOffset].dist < sdata[threadGroupId].dist)
-	{
-		sdata[threadGroupId] = sdata[threadGroupId + bufferOffset];
-	}
+    if (sdata[threadGroupId + bufferOffset].dist < sdata[threadGroupId].dist)
+    {
+        sdata[threadGroupId] = sdata[threadGroupId + bufferOffset];
+    }
 }
 
 [numthreads(NUM_THREADS_MIN_DIST, 1, 1)]
@@ -114,19 +114,19 @@ void ReduceDistance(uint threadGroupId : SV_GroupIndex, uint3 groupIdx : SV_Grou
     // Group 0:    0 - 2047
     // Group 1: 2048 - 4095
 
-	uint groupDim_x = NUM_THREADS_MIN_DIST;
-    
+    uint groupDim_x = NUM_THREADS_MIN_DIST;
+
     // What value in _DistanceBuffer should I read? Calculate global index for current thread
     uint i = groupIdx.x * (groupDim_x * 2) + threadGroupId;
 
-    sdata[threadGroupId]  = _DistanceBuffer[i];
-	PointDistance second  = _DistanceBuffer[i+groupDim_x];
+    sdata[threadGroupId] = _DistanceBuffer[i];
+    PointDistance second = _DistanceBuffer[i + groupDim_x];
 
     if (second.dist < sdata[threadGroupId].dist)
     {
         sdata[threadGroupId] = second;
     }
-	GroupMemoryBarrierWithGroupSync();
+    GroupMemoryBarrierWithGroupSync();
 
     // Now we have 1024 values calculated in sdata
 
@@ -201,7 +201,7 @@ void ReduceDistance(uint threadGroupId : SV_GroupIndex, uint3 groupIdx : SV_Grou
 
     // Only first thread is allowed to write
     if (threadGroupId == 0)
-	{
+    {
         _DistanceReduceBuffer[groupIdx.x] = sdata[0];
     }
 }
@@ -210,19 +210,18 @@ uint dist_reduce_groups;
 [numthreads(1, 1, 1)]
 void SetMinDistance(uint3 threadIdx : SV_GroupThreadID, uint3 groupIdx : SV_GroupID)
 {
-	PointDistance pd = _DistanceReduceBuffer[0];
+    PointDistance pd = _DistanceReduceBuffer[0];
 
-	// uint num_groups = dist_reduce_groups;
-	for (uint i = 1; i < dist_reduce_groups; i++)
-	{
-		PointDistance p_dist = _DistanceReduceBuffer[i];
-		if (p_dist.dist < pd.dist)
-		{
-			pd = p_dist;
-		}
-	}
+    for (uint i = 1; i < dist_reduce_groups; i++)
+    {
+        PointDistance p_dist = _DistanceReduceBuffer[i];
+        if (p_dist.dist < pd.dist)
+        {
+            pd = p_dist;
+        }
+    }
 
-    _NearestPointIdBuffer[0]       = pd.id;
+    _NearestPointIdBuffer[0] = pd.id;
     _NearestPointPositionBuffer[0] = _PointsPositionBuffer[pd.id].pos;
 
 }

@@ -21,7 +21,7 @@ void CountClasses(uint3 id : SV_DispatchThreadID)
 [numthreads(NUM_TREADS, 1, 1)]
 void SetSelectedClass(uint3 id : SV_DispatchThreadID)
 {
-    if(_Points[id.x].selected == 1)
+    if (_Points[id.x].selected == 1)
     {
         _Points[id.x].classification = _class_to_set;
     }

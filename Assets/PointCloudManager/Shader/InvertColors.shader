@@ -48,7 +48,6 @@ Shader "SLU/InvertColors"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 col = i.color;
-				// just invert the colors
 				col = 1 - col;
 				return col;
 			}

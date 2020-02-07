@@ -1,17 +1,15 @@
-﻿/*
-    Author: Mikael Hertz (mikael.hertz@gmail.com)
-*/
-using System;
+﻿using System;
 using System.IO;
 using UnityEngine;
-using Valve.VR;
 using Valve.VR.InteractionSystem;
+using Valve.VR;
 
 public class StartView : MonoBehaviour
 {
-    public  MenuCtrl          _MenuCtrl;
+    public  MenuCtrl          _MenuCtrl; // Need to reset screen visibility...
     public  ViveCtrl          _ViveCtrl;
     private PointCloudManager _PointCloudManager;
+    public  SpinnerXRCtrl     _SpinnerCtrl;
 
     public GameObject _ColliderPrefab;
 
@@ -71,6 +69,8 @@ public class StartView : MonoBehaviour
         _PointCloudManager.OnProgress += OnProgressEvent;
         _PointCloudManager.OnGPUSetDataDone += OnLoadComplete;
 
+        _SpinnerCtrl.SetActive(false);
+
         SetComponentsActive(true);
     }
 
@@ -115,6 +115,7 @@ public class StartView : MonoBehaviour
                 _PointCloudManager.StartImportLAS();
                 _Progress = 0;
                 SetComponentsActive(false);
+                _SpinnerCtrl.SetActive(true);
             }
             catch(FileNotFoundException ex)
             {
@@ -127,6 +128,7 @@ public class StartView : MonoBehaviour
             _Progress = 0;
             SetComponentsActive(false);
             _PointCloudManager.StartLoadFile();
+            _SpinnerCtrl.SetActive(true);
         }
 
         _MenuCtrl.ResetScreens();
@@ -140,6 +142,7 @@ public class StartView : MonoBehaviour
 
     void OnLoadComplete(object sender, EventArgs e)
     {
+        _SpinnerCtrl.SetActive(false);
         ActionSetPointcloudViewEnabled(true);
     }
 
@@ -165,6 +168,7 @@ public class StartView : MonoBehaviour
 
         if(active)
         {
+            //SteamVR_Input.
             SteamVR_Actions.startview.resetposition.AddOnChangeListener(ResetStartViewPosition, SteamVR_Input_Sources.Any);
         }
         else
@@ -192,4 +196,5 @@ public class StartView : MonoBehaviour
     {
         return _Active;
     }
+
 }

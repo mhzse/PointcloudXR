@@ -1,4 +1,7 @@
-﻿using System;
+﻿/*
+    Author: Mikael Hertz (mikael.hertz@gmail.com)
+*/
+using System;
 using System.IO;
 
 namespace PCXRFile

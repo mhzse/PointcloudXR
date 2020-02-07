@@ -45,7 +45,6 @@ Shader "SLU/EditToolUnlit"
 
 			fixed4 frag (v2f i) : SV_Target
 			{
-				//return float4(_Color.xyz, _Alpha);
 				return _Color;
 			}
 			ENDCG

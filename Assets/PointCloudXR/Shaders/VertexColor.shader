@@ -15,6 +15,7 @@ Shader "SLU/VertexColor"
 			#pragma vertex vert
 			#pragma fragment frag
 
+
 			struct VertexInput 
 			{
 				float4 v : POSITION;
@@ -44,4 +45,5 @@ Shader "SLU/VertexColor"
 			ENDCG
 		}
 	}
+
 }

@@ -2,10 +2,7 @@
     Author: Mikael Hertz (mikael.hertz@gmail.com)
 */
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Valve.VR;
 
 public enum EditToolMode { DELETE, SELECT, DESELECT, NONE };
 public enum EditToolScaleType { UP = 1, DOWN = -1, NONE = 0 };
@@ -13,34 +10,34 @@ public enum EditToolOffsetType { OUT = 1, IN = -1, NONE = 0 };
 
 public class EditToolCtrl : MonoBehaviour
 {
-    public GameObject        _Parent;
+    public GameObject _Parent;
     public float _ParentOffsetZ;
     public PointCloudManager _point_cloud_manager;
 
     [Range(0, 1)]
-    public float     _SpeedDistanceFactor = 0.5f;
-    public Material  _Material;
-    public Color     _DeleteColor;
-    public Color     _DeleteRimColor;
-    public Color     _SelectColor;
-    public Color     _SelectRimColor;
-    public Color     _DeselectColor;
-    public Color     _DeselectRimColor;
-    public Color     _InactiveColor;
-    public float     _Offset;
-    public float     _OffsetMin = 0.0f;
-    public float     _OffsetMinDynamic; // To constrain offset distance to half _Geometry scale, preventing _Geometry to swallow _Parent
-    public float     _OffsetMax;
-    public float     _Scale;
-    public float     _ScaleMin = 0.05f;
-    public float     _ScaleMax = 5.0f;
-    public float     _ScaleMaxDynamic; // To constrain scale to twice offset distance, preventing _Geometry to swallow _Parent
+    public float _SpeedDistanceFactor = 0.5f;
+    public Material _Material;
+    public Color _DeleteColor;
+    public Color _DeleteRimColor;
+    public Color _SelectColor;
+    public Color _SelectRimColor;
+    public Color _DeselectColor;
+    public Color _DeselectRimColor;
+    public Color _InactiveColor;
+    public float _Offset;
+    public float _OffsetMin = 0.0f;
+    public float _OffsetMinDynamic; // To constrain offset distance to half _Geometry scale, preventing _Geometry to swallow _Parent
+    public float _OffsetMax;
+    public float _Scale;
+    public float _ScaleMin = 0.05f;
+    public float _ScaleMax = 5.0f;
+    public float _ScaleMaxDynamic; // To constrain scale to twice offset distance, preventing _Geometry to swallow _Parent
     [Range(0, 0.5f)]
-    public float     _SpeedScaleFactor = 0.1f;
-    public bool      _IsActive = false;
-    public Color     _SelectedPointColor;
-    
-    private EditToolScaleType  _ScaleType;
+    public float _SpeedScaleFactor = 0.1f;
+    public bool _IsActive = false;
+    public Color _SelectedPointColor;
+
+    private EditToolScaleType _ScaleType;
     private EditToolOffsetType _OffsetType;
 
     public event EventHandler<EventArgs> OnOffsetAccepted;
@@ -56,9 +53,9 @@ public class EditToolCtrl : MonoBehaviour
         SetActive(false);
         transform.parent = _Parent.transform;
         SetParentOffsetZ(_ParentOffsetZ);
-        
+
         gameObject.GetComponent<Renderer>().material = _Material;
-        
+
         _Scale = _ScaleMin;
         _ScaleType = EditToolScaleType.NONE;
 
@@ -86,9 +83,9 @@ public class EditToolCtrl : MonoBehaviour
     {
         _ParentOffsetZ = zOffset;
         transform.localPosition = new Vector3(0f, 0f, zOffset + _ParentOffsetZ);
-        _ScaleMaxDynamic = zOffset*2;
+        _ScaleMaxDynamic = zOffset * 2;
 
-        if(_ScaleMaxDynamic < _ScaleMin)
+        if (_ScaleMaxDynamic < _ScaleMin)
         {
             _ScaleMaxDynamic = _ScaleMin;
         }
@@ -123,7 +120,7 @@ public class EditToolCtrl : MonoBehaviour
 
         // Must be greater than minimum distance
         _Offset = _Offset >= _OffsetMin ? _Offset : _OffsetMin;
-        
+
         // And less than maximun offset
         _Offset = _Offset <= _OffsetMax ? _Offset : _OffsetMax;
 
@@ -180,12 +177,12 @@ public class EditToolCtrl : MonoBehaviour
 
         // And less than maximun offset
         newEditToolOffset = newEditToolOffset <= _OffsetMax ? newEditToolOffset : _OffsetMax;
-        
+
         if (transform.localPosition.z < _OffsetMin)
         {
             transform.localPosition = new Vector3(0.0f, 0.0f, _OffsetMin);
         }
-        
+
         if (newEditToolOffset >= _OffsetMin && newEditToolOffset <= _OffsetMax)
         {
             if (transform.localPosition.z >= _OffsetMin && transform.localPosition.z <= _OffsetMax)
@@ -207,7 +204,7 @@ public class EditToolCtrl : MonoBehaviour
             newEditToolOffset = _OffsetMax;
         }
 
-        if(newEditToolOffset_original == newEditToolOffset)
+        if (newEditToolOffset_original == newEditToolOffset)
         {
             // Trigger Offset accepted event
             OnOffsetAccepted?.Invoke(this, EventArgs.Empty);
@@ -230,11 +227,11 @@ public class EditToolCtrl : MonoBehaviour
         _Scale = _Scale <= _ScaleMaxDynamic ? _Scale : _ScaleMaxDynamic;
 
         // And greater than minimum scale
-        _Scale = _Scale >= _ScaleMin ? _Scale : _ScaleMin; // _ScaleMaxDynamic
+        _Scale = _Scale >= _ScaleMin ? _Scale : _ScaleMin;
 
         // And less than maximum scale
         _Scale = _Scale <= _ScaleMax ? _Scale : _ScaleMax;
-        
+
 
         var scaleValue = 0.4f * Time.fixedDeltaTime * (int)_ScaleType;
 
@@ -257,13 +254,13 @@ public class EditToolCtrl : MonoBehaviour
                 transform.localScale = new Vector3(_Scale, _Scale, _Scale);
             }
         }
-        
+
         _point_cloud_manager.EditToolSetRadius(_Scale / 2);
     }
 
     public void SetScale(EditToolScaleType scaleType)
     {
-        var   scaleValue = _Scale + 0.4f * Time.fixedDeltaTime * (int)scaleType;
+        var scaleValue = _Scale + 0.4f * Time.fixedDeltaTime * (int)scaleType;
         float scaleBoost = (scaleValue / _ScaleMax) * _SpeedScaleFactor * (int)scaleType;
 
         scaleValue += scaleBoost;
@@ -309,7 +306,7 @@ public class EditToolCtrl : MonoBehaviour
         {
             _IsActive = true;
 
-            if(_Parent != null)
+            if (_Parent != null)
             {
                 transform.parent = _Parent.transform;
             }
@@ -318,7 +315,7 @@ public class EditToolCtrl : MonoBehaviour
             ResetEditTool();
         }
 
-        if(!active)
+        if (!active)
         {
             _IsActive = false;
             GetComponent<MeshRenderer>().enabled = false;
@@ -354,9 +351,9 @@ public class EditToolCtrl : MonoBehaviour
         _mode = mode;
 
         Color[] mode_colors = GetModeColors(_mode);
-        
+
         _Material.SetColor("_ColorTint", mode_colors[0]);
-        _Material.SetColor("_RimColor",  mode_colors[1]);
+        _Material.SetColor("_RimColor", mode_colors[1]);
         _Material.SetFloat("_RimPower", 6);
 
         // Update shader to current EditToolMode
@@ -455,11 +452,11 @@ public class EditToolCtrl : MonoBehaviour
 
     void Update()
     {
-        if(_IsActive)
+        if (_IsActive)
         {
             // Set dynamic scale and offset limits to prevent _Geometry from swollowing _Parent.
             SetOffsetAndScaleDynamic();
-            
+
             // Update position in PCManager
             _point_cloud_manager.EditToolSetPosition(transform.position);
 

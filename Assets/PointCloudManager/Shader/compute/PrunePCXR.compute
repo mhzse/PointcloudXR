@@ -14,8 +14,8 @@ RWStructuredBuffer<PointXR>     _VisiblePoints : register(u5);
 void RemoveDeletedPoints(uint3 id : SV_DispatchThreadID)
 {
     PointXR pt = _points[id.x];
-    
-    if (pt.deleted == 0 && pt.pos.x != 0) 
+
+    if (pt.deleted == 0 && pt.pos.x != 0)
     {
         _pruned_points.Append(pt);
     }

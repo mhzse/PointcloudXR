@@ -8,8 +8,6 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using TMPro;
 using UnityEngine;
-using Valve.VR;
-using Valve.VR.InteractionSystem;
 
 public enum ExportFormat {  XYZ, LAS };
 public enum ColorByParam {  RGB, CLASS, HEIGHT, INTENSITY, POINT_SOURCE_ID, NONE };
@@ -27,7 +25,6 @@ public class MenuCtrl : MonoBehaviour
     public  GameObject      _ToolsScreen;
     public  GameObject      _ToolsMeasureScreen;
     public  GameObject      _ToolsEditScreen;
-    public  GameObject      _ToolsEditSelectByClassScreen;
     public  GameObject      _ToolsVisualsScreen;
     public  GameObject      _DebugScreen;
     public  MeasureToolCtrl _MeasureTool;
@@ -45,8 +42,6 @@ public class MenuCtrl : MonoBehaviour
     public ButtonXR _ButtonDeleteSelected;
     public ButtonXR _ButtonSelectInverse;
     public ButtonXR _ButtonSelectNone;
-    public ButtonXR _ButtonSelectByClass;
-    public ButtonXR _ButtonSelectByClassBack;
 
     public  ButtonXR   _ButtonVisualsToggle;
     public  ButtonXR   _ButtonVisualsBack;
@@ -223,7 +218,7 @@ public class MenuCtrl : MonoBehaviour
         _SliderThrottleXR.SetMax(6f);
         _SliderThrottleXR.OnValueChangeEvent += OnThrottleChanged;
 
-        EnableButtonsForPointCloud(false);
+        EnableButtonsForPointCloud(false); // Always starts in StartView scene, no pointcloud loaded.
 
         MenuUpdate();
         ChildrenSetActive(false);
@@ -398,12 +393,6 @@ public class MenuCtrl : MonoBehaviour
         EditSetActive(!e._Active);
     }
 
-    void OnButtonSelectByClassBackEvent( object sender, ButtonToggleEvent e )
-    {
-        _ButtonSelectByClassBack.SetActive(false);
-        SelectByClassSetActive(false);
-    }
-
     void OnButtonVisualsToggleEvent(object sender, ButtonToggleEvent e)
     {
         _ButtonVisualsToggle.SetActive(false);
@@ -422,14 +411,6 @@ public class MenuCtrl : MonoBehaviour
 
         _ToolsScreen.SetActive(!active);
         _ToolsEditScreen.SetActive(active);
-        MenuUpdate();
-    }
-
-    void SelectByClassSetActive( bool active )
-    {
-        _ViveCtrl.EditToolSetActive(!active);
-        _ToolsEditSelectByClassScreen.SetActive(active);
-        _ToolsEditScreen.SetActive(!active);
         MenuUpdate();
     }
 
@@ -483,7 +464,6 @@ public class MenuCtrl : MonoBehaviour
         _PointCloudManager.SelectInverse();
     }
 
-    // Test function for UI Button...
     public void SelectInverse()
     {
         _PointCloudManager.SelectInverse();
@@ -491,6 +471,7 @@ public class MenuCtrl : MonoBehaviour
 
     void OnButtonSelectNone(object sender, ButtonToggleEvent e)
     {
+
         StartCoroutine(SetButtonInactiveDelay(((ButtonXR)sender), 1));
         _PointCloudManager.SelectNone();
     }
@@ -500,6 +481,7 @@ public class MenuCtrl : MonoBehaviour
         yield return new WaitForSeconds(time);
         button.SetActive(false);
     }
+
 
     void OnButtonUndoDelete(object sender, ButtonToggleEvent e)
     {
@@ -745,11 +727,7 @@ public class MenuCtrl : MonoBehaviour
 
     void OnButtonQuit(object sender, ButtonToggleEvent e)
     {
-        #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-        #else
         Application.Quit();
-        #endif
     }
 
     void OnStartMeny(object sender, ButtonToggleEvent e)
@@ -763,7 +741,7 @@ public class MenuCtrl : MonoBehaviour
             EditSetActive(false);
         }
     }
-
+    
     private void MenuSetActive(bool active)
     {
         ChildrenSetActive(active);

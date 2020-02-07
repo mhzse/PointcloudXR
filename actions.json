@@ -1,0 +1,149 @@
+{
+  "actions": [
+    {
+      "name": "/actions/default/in/InteractUI",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/Teleport",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/GrabPinch",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/GrabGrip",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/Pose",
+      "type": "pose"
+    },
+    {
+      "name": "/actions/default/in/SkeletonLeftHand",
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/left"
+    },
+    {
+      "name": "/actions/default/in/SkeletonRightHand",
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/right"
+    },
+    {
+      "name": "/actions/default/in/Squeeze",
+      "type": "vector1",
+      "requirement": "optional"
+    },
+    {
+      "name": "/actions/default/in/vive_tracker_2",
+      "type": "pose"
+    },
+    {
+      "name": "/actions/default/in/vive_tracker_1",
+      "type": "pose"
+    },
+    {
+      "name": "/actions/default/out/Haptic",
+      "type": "vibration"
+    },
+    {
+      "name": "/actions/startview/in/resetposition",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolToggleMode",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/MeasureToolToggleState",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/Throttle",
+      "type": "vector1"
+    },
+    {
+      "name": "/actions/pointcloudview/in/MoveBackwards",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolMoveForward",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolMoveBackward",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolScaleUp",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolScaleDown",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/pointcloudview/in/EditToolOnOff",
+      "type": "boolean"
+    }
+  ],
+  "action_sets": [
+    {
+      "name": "/actions/default",
+      "usage": "single"
+    },
+    {
+      "name": "/actions/startview",
+      "usage": "leftright"
+    },
+    {
+      "name": "/actions/pointcloudview",
+      "usage": "leftright"
+    }
+  ],
+  "default_bindings": [
+    {
+      "controller_type": "vive_controller",
+      "binding_url": "bindings_vive_controller.json"
+    },
+    {
+      "controller_type": "oculus_touch",
+      "binding_url": "bindings_oculus_touch.json"
+    },
+    {
+      "controller_type": "knuckles",
+      "binding_url": "bindings_knuckles.json"
+    },
+    {
+      "controller_type": "holographic_controller",
+      "binding_url": "bindings_holographic_controller.json"
+    }
+  ],
+  "localization": [
+    {
+      "language_tag": "en_US",
+      "/actions/default/in/InteractUI": "Interact With UI",
+      "/actions/default/in/Teleport": "Teleport",
+      "/actions/default/in/GrabPinch": "Grab Pinch",
+      "/actions/default/in/GrabGrip": "Grab Grip",
+      "/actions/default/in/SkeletonLeftHand": "Skeleton (Left)",
+      "/actions/default/in/SkeletonRightHand": "Skeleton (Right)",
+      "/actions/default/in/Pose": "Pose",
+      "/actions/default/out/Haptic": "Haptic",
+      "/actions/StartView/in/ResetPosition": "ResetPosition",
+      "/actions/startview/in/resetposition": "resetposition",
+      "/actions/default/in/vive_tracker_2": "vive_tracker_2",
+      "/actions/default/in/vive_tracker_1": "vive_tracker_1",
+      "/actions/pointcloudview/in/Throttle": "Throttle",
+      "/actions/pointcloudview/in/MoveBackwards": "MoveBackwards",
+      "/actions/pointcloudview/in/EditToolToggleMode": "EditToolToggleMode",
+      "/actions/pointcloudview/in/MeasureToolToggleState": "MeasureToolToggleState",
+      "/actions/pointcloudview/in/EditToolMoveForward": "EditToolMoveForward",
+      "/actions/pointcloudview/in/EditToolMoveBackward": "EditToolMoveBackward",
+      "/actions/pointcloudview/in/EditToolScaleUp": "EditToolScaleUp",
+      "/actions/pointcloudview/in/EditToolScaleDown": "EditToolScaleDown",
+      "/actions/pointcloudview/in/EditToolOnOff": "EditToolOnOff"
+    }
+  ]
+}

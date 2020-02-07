@@ -17,6 +17,7 @@ public enum MeasureState
 
 public class MeasureToolCtrl : MonoBehaviour
 {
+    // bool defaults to false in C#
     public ViveCtrl     _ViveCtrl;
     public GameObject   _PointerPrefab;
     public Material     _PointerMaterial;
@@ -37,7 +38,7 @@ public class MeasureToolCtrl : MonoBehaviour
     public bool _Active { get; set; }
     public RestrictMode _MeasurementLineRestrictMode = RestrictMode.none;
 
-    public GameObject _MeasurePointer;
+    private GameObject _MeasurePointer;
 
     private MeasureState _State;
 

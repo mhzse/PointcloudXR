@@ -17,39 +17,39 @@ using PointCloud.PointCloudConfig;
 
 public struct PointXR
 {
-    float  x;
-    float  y;
-    float  z;
-    float  red;
-    float  green;
-    float  blue;
-    float  alpha;
-    float  deleted;
-    float  selected;
-    float  intensityNormalized;
-    float  classification;
-    float  id;          // AppendBuffer in FrustumCulling scrambles point id. Must keep track
-                        // of point id like this to identify the correct global point.
-                        // Important for showing nearest point found.
-    float  user_red;
-    float  user_green;
-    float  user_blue;
-    float  user_alpha;
-    float  scan_angle_rank;
-    float  user_data;
-    float  point_source_id;
-    float  gps_time;
+    float x;
+    float y;
+    float z;
+    float red;
+    float green;
+    float blue;
+    float alpha;
+    float deleted;
+    float selected;
+    float intensityNormalized;
+    float classification;
+    float id;          // AppendBuffer in FrustumCulling scrambles point id. Must keep track
+                       // of point id like this to identify the correct global point.
+                       // Important for showing nearest point found.
+    float user_red;
+    float user_green;
+    float user_blue;
+    float user_alpha;
+    float scan_angle_rank;
+    float user_data;
+    float point_source_id;
+    float gps_time;
 
-    float  visible;
-    float  padding01;
-    float  padding02;
-    float  padding03;
+    float visible;
+    float padding01;
+    float padding02;
+    float padding03;
 };
 
 public struct PointPos
 {
     public Vector3 pos;
-    public uint    id;
+    public uint id;
 };
 
 public struct PointByte
@@ -63,7 +63,7 @@ public struct LASPointXR
     public double Y;
     public double Z;
     public ushort Intensity;
-    public byte   Classification;
+    public byte Classification;
 }
 
 public struct DispatchArgs
@@ -95,12 +95,12 @@ public class PointCloudFormat
     public double MinZ { get; set; }
     // LAS Specific variables END
 
-    public int?   AddIntensityValueToColor { get; set; }
-    public int?   IntensityAsColor         { get; set; }
-    public float? AddIntensityToColor      { get; set; }
-    public float  UseUserColor             { get; set; }
-    public float? GeometrySize             { get; set; }
-    public float  UserColorAsColor         { get; set; }
+    public int? AddIntensityValueToColor { get; set; }
+    public int? IntensityAsColor { get; set; }
+    public float? AddIntensityToColor { get; set; }
+    public float UseUserColor { get; set; }
+    public float? GeometrySize { get; set; }
+    public float UserColorAsColor { get; set; }
 
 
     public PointCloudFormat() { }
@@ -108,10 +108,10 @@ public class PointCloudFormat
 
 public class PointCloudManager : MonoBehaviour
 {
-    public  bool          _draw_all_cameras = false;
+    public bool _draw_all_cameras = false;
 
-    public  Material      _Material;
-    public float          _ShaderZDepth;
+    public Material _Material;
+    public float _ShaderZDepth;
     private ComputeBuffer _COMPUTE_BUFFER_POINTS;    // Point cloud data
     private ComputeBuffer _COMPUTE_BUFFER_COM;       // Communication buffer
     private ComputeBuffer _COMPUTE_BUFFER_NEAREST_POINT_ID;
@@ -122,7 +122,7 @@ public class PointCloudManager : MonoBehaviour
 
     private PointCloudFormat _PointCloudFormat;
     private float[] _COMPUTE_BUFFER_POINTS_DATA;
-    private byte[]  _COMPUTE_BUFFER_POINTS_DATA_BYTES;
+    private byte[] _COMPUTE_BUFFER_POINTS_DATA_BYTES;
     private float[] _COMPUTE_BUFFER_COM_DATA;
     private float[] _COMPUTE_BUFFER_NEAREST_POINT_DATA;
     private float[] _COMPUTE_BUFFER_TRANSLATED_POINTS_DATA;
@@ -131,8 +131,8 @@ public class PointCloudManager : MonoBehaviour
     private byte[] _pruned_points_byte_data;
 
     // Flags for threaded execution
-    private bool _PointCloudLoaded   = false;
-    private bool _PointCloudSaved    = false;
+    private bool _PointCloudLoaded = false;
+    private bool _PointCloudSaved = false;
     private bool _PointCloudExported = false;
 
     public event EventHandler<EventArgs> OnEditToolCollide;
@@ -162,111 +162,111 @@ public class PointCloudManager : MonoBehaviour
     private string _ReadFilename;
     private string _WriteFilename;
 
-    public bool         _ActivateEditTool = false;
+    public bool _ActivateEditTool = false;
     public EditToolMode _EditToolAction;
 
-    public int   _POINTS_IN_CLOUD;   // Number of points in the cloud
+    public int _POINTS_IN_CLOUD;   // Number of points in the cloud
     public int[] _POINTS_IN_FRUSTUM; // Currently number of visible points in the cloud, used for frustum culling of points.
-    
-    // Status variables when loading poincloud from file
-    private float  _Progress = 0;
-    private string _GUIText;
-    private bool   _UPDATE_PROGRESS_IN_GUI = false;
 
-    private int _STRIDE        = 24;
+    // Status variables when loading poincloud from file
+    private float _Progress = 0;
+    private string _GUIText;
+    private bool _UPDATE_PROGRESS_IN_GUI = false;
+
+    private int _STRIDE = 24;
     private int _RGB_SCALE_LAS = 65535;
 
-    public  GameObject  _PointCloudPosition;
-    private Vector3     _PointCloudInitialPosition;
-    public  GameObject  _UserGameObject;
-    public  Camera      _UserCamera;
-    public  GameObject  _CollisionGameObject;
-    private Vector3     _UserStartPosition;
-    private Quaternion  _UserStartRotation;
+    public GameObject _PointCloudPosition;
+    private Vector3 _PointCloudInitialPosition;
+    public GameObject _UserGameObject;
+    public Camera _UserCamera;
+    public GameObject _CollisionGameObject;
+    private Vector3 _UserStartPosition;
+    private Quaternion _UserStartRotation;
 
-    public  int  _EditToolCollision       = 0;
-    public  int  _UserGroundCollision     = 0;
-    private int  _UserGroundCollisionPrev = 0;
+    public int _EditToolCollision = 0;
+    public int _UserGroundCollision = 0;
+    private int _UserGroundCollisionPrev = 0;
 
-    public  bool       _ExportToLAS          = false;
-    public  bool       _SaveSelected         = false;
-    public  bool       _ExportSelected       = false;
-    public  bool       _FindNearestPoint     = false;
-    private bool       _FindNearestPointPrev = false; // Detect transition
-    public  GameObject _SnapToPointGameObject;
-    private Vector3[]  _FindNearestPointFilterArray;
-    private int        _FindNearestPointFilterCount    = 0;
+    public bool _ExportToLAS = false;
+    public bool _SaveSelected = false;
+    public bool _ExportSelected = false;
+    public bool _FindNearestPoint = false;
+    private bool _FindNearestPointPrev = false; // Detect transition
+    public GameObject _SnapToPointGameObject;
+    private Vector3[] _FindNearestPointFilterArray;
+    private int _FindNearestPointFilterCount = 0;
     private static int _FindNearestPointFilterCountMax = 5;
-    private Vector3    _FindNearestPointToPosition;
-    private Vector3    _NearestPointFound;
-    private bool       _ShowNearestPoint = false;
+    private Vector3 _FindNearestPointToPosition;
+    private Vector3 _NearestPointFound;
+    private bool _ShowNearestPoint = false;
 
     private Dictionary<Camera, CommandBuffer> _CameraMap = new Dictionary<Camera, CommandBuffer>();
     CameraEvent _CamEventDrawProcedural = CameraEvent.BeforeForwardOpaque;
 
-    private Vector3    _CentroidSelectedPointsStartPosition;
+    private Vector3 _CentroidSelectedPointsStartPosition;
     private GameObject _CentroidSelectedPoints;
 
-    private bool   _OctreeDrawGizmos     = false;
-    private bool   _OctreeDrawEmptyNodes = false;
-    public  byte   _OctreeDrawMaxDepth   { get; set; } = 5;
+    private bool _OctreeDrawGizmos = false;
+    private bool _OctreeDrawEmptyNodes = false;
+    public byte _OctreeDrawMaxDepth { get; set; } = 5;
 
     public int _ComputeBufferSetDataChunkSize = 50000;
 
-    public  ComputeShader _FindNearestPointCompute;
+    public ComputeShader _FindNearestPointCompute;
     private ComputeBuffer _COMPUTE_BUFFER_CS_POINTS_POSITION; // Only position data, faster buffer with smaller stride.
     private ComputeBuffer _COMPUTE_BUFFER_CS_DISTANCE_TO_POINT;
     private ComputeBuffer _COMPUTE_BUFFER_CS_DISTANCE_TO_POINT_REDUCE;
-    public int            _CS_NEAREST_POINT_THREADS;
-    public int            _CS_BATCH_SIZE;// = 16;
-    public ComputeBuffer  _COMPUTE_BUFFER_CS_DEBUG;
-    public ComputeBuffer  _COMPUTE_BUFFER_CS_DISPATH_INDIRECT_ARGS;
-    public int            _CS_NUM_GROUPS;
+    public int _CS_NEAREST_POINT_THREADS;
+    public int _CS_BATCH_SIZE;// = 16;
+    public ComputeBuffer _COMPUTE_BUFFER_CS_DEBUG;
+    public ComputeBuffer _COMPUTE_BUFFER_CS_DISPATH_INDIRECT_ARGS;
+    public int _CS_NUM_GROUPS;
 
-    public bool           _show_number_of_points_on_screen;
-    public bool           _culling_enabled;
-    public  ComputeShader _PointsFrustumCullingCompute;
+    public bool _show_number_of_points_on_screen;
+    public bool _culling_enabled;
+    public ComputeShader _PointsFrustumCullingCompute;
     private ComputeBuffer _COMPUTE_BUFFER_CS_POINTS_BUFFER_APPEND;
-    public  int           _DISPATCH_POINTS_FRUSTUM_CULLING_NTH_FRAME = 1;
-    private int           _DISPATCH_POINTS_FRUSTUM_CULLING_NTH_FRAME_COUNTER = 0;
+    public int _DISPATCH_POINTS_FRUSTUM_CULLING_NTH_FRAME = 1;
+    private int _DISPATCH_POINTS_FRUSTUM_CULLING_NTH_FRAME_COUNTER = 0;
 
     private ComputeBuffer _COMPUTE_BUFFER_CS_DRAWPROCEDURAL_INDIRECT_ARGS; // Used in OnRenderObject to draw procedural geometry 
                                                                            // from buffer with dynamic size. Buffer managed by 
                                                                            // PointsFrustumCulling compute shader.
     private ComputeBuffer _COMPUTE_BUFFER_CS_POINTS_BUFFER_APPEND_COUNT;   // For debugging
 
-    private int           _CS_POINTS_BUFFER_THREADS = 1024;
+    private int _CS_POINTS_BUFFER_THREADS = 1024;
 
-    public float          _CSFrustumCullMargin;
+    public float _CSFrustumCullMargin;
 
-    public  ComputeShader _PointGeneratorCompute;
-    public  ComputeShader _LAS_to_PCXR;
-    public  ComputeShader _PCXR_to_LAS; // TODO: Implement export LAS function using this...
+    public ComputeShader _PointGeneratorCompute;
+    public ComputeShader _LAS_to_PCXR;
+    public ComputeShader _PCXR_to_LAS; // TODO: Implement export LAS function using this...
     private ComputeBuffer _COMPUTE_BUFFER_CS_LAS_RAW_BYTES;
-    private byte[]        _COMPUTE_BUFFER_CS_LAS_POINTS_BYTES_DATA;
-    public  int           _LasPointNummerDebug;
-    private LASHeader     _LAS_HEADER;
+    private byte[] _COMPUTE_BUFFER_CS_LAS_POINTS_BYTES_DATA;
+    public int _LasPointNummerDebug;
+    private LASHeader _LAS_HEADER;
 
-    public  bool          _UsePointsByteData;
-    public  uint          _PGPoints;
-    public  float         _PGSpacing;
-    public  float         _LOD1Distance;
-    private bool          _GeneratedPoints = false;
+    public bool _UsePointsByteData;
+    public uint _PGPoints;
+    public float _PGSpacing;
+    public float _LOD1Distance;
+    private bool _GeneratedPoints = false;
 
-    private AsyncGPUReadbackRequest      _AsyncGPURequest;
-    private AsyncGPUReadbackRequest      _AsyncGPU_TransferGPU_Data_Request;
-    private bool                         _TransferGPUData = false;
+    private AsyncGPUReadbackRequest _AsyncGPURequest;
+    private AsyncGPUReadbackRequest _AsyncGPU_TransferGPU_Data_Request;
+    private bool _TransferGPUData = false;
     private System.Diagnostics.Stopwatch _TransferGPUData_Simple_stopwatch;
 
-    public ComputeShader  _EditPointsCompute;
+    public ComputeShader _EditPointsCompute;
 
     private ComputeBuffer _POINT_CLASSES_COMPUTE_BUFFER;
     private ComputeBuffer _POINT_SELECTED_INDEX_BUFFER;
 
-    public  ComputeShader _PointClassesCompute;
-    private float[]       _point_classes; // Clasifications that are used by the point cloud (populated by compute shader)
+    public ComputeShader _PointClassesCompute;
+    private float[] _point_classes; // Clasifications that are used by the point cloud (populated by compute shader)
 
-    public  ComputeShader  _prune_pcxr;
+    public ComputeShader _prune_pcxr;
 
     private Config _config;
     private string _config_file_path;
@@ -279,7 +279,7 @@ public class PointCloudManager : MonoBehaviour
         _POINTS_IN_FRUSTUM = new int[1];
 
         OnPointCloudLoaded += OnPointCloudLoadedListener;
-        OnGPUSetDataDone   += OnGPUSetDataListener;
+        OnGPUSetDataDone += OnGPUSetDataListener;
 
         _Material.SetFloat("_ZDepth", _ShaderZDepth);
 
@@ -362,11 +362,6 @@ public class PointCloudManager : MonoBehaviour
         min.y = GetNearestPointPosition(new Vector3(0, -1000f, 0)).y;
         min.z = GetNearestPointPosition(new Vector3(0, 0, -1000f)).z;
 
-        //float x_span = max.x - min.x;
-        //float z_span = max.z - min.z;
-
-        
-
         boundaries[0] = max;
         boundaries[1] = min;
 
@@ -420,18 +415,18 @@ public class PointCloudManager : MonoBehaviour
 
 
         ComputeBuffer las_header_buffer = new ComputeBuffer(1, 12 * sizeof(double), ComputeBufferType.Default);
-         
+
         double[] las_header_data = new double[12];
-        las_header_data[0]  = las_header.Xscalefactor;
-        las_header_data[1]  = las_header.Yscalefactor;
-        las_header_data[2]  = las_header.Zscalefactor;
-        las_header_data[3]  = las_header.Xoffset;
-        las_header_data[4]  = las_header.Yoffset;
-        las_header_data[5]  = las_header.Zoffset;
-        las_header_data[6]  = las_header.MaxX;
-        las_header_data[7]  = las_header.MinX;
-        las_header_data[8]  = las_header.MaxY;
-        las_header_data[9]  = las_header.MinY;
+        las_header_data[0] = las_header.Xscalefactor;
+        las_header_data[1] = las_header.Yscalefactor;
+        las_header_data[2] = las_header.Zscalefactor;
+        las_header_data[3] = las_header.Xoffset;
+        las_header_data[4] = las_header.Yoffset;
+        las_header_data[5] = las_header.Zoffset;
+        las_header_data[6] = las_header.MaxX;
+        las_header_data[7] = las_header.MinX;
+        las_header_data[8] = las_header.MaxY;
+        las_header_data[9] = las_header.MinY;
         las_header_data[10] = las_header.MaxZ;
         las_header_data[11] = las_header.MinZ;
 
@@ -457,7 +452,7 @@ public class PointCloudManager : MonoBehaviour
 
         ComputeBuffer selected_points_count = new ComputeBuffer(1, sizeof(int), ComputeBufferType.IndirectArguments);
 
-        _EditPointsCompute.SetBuffer(kernel, "_Points",                _COMPUTE_BUFFER_POINTS);
+        _EditPointsCompute.SetBuffer(kernel, "_Points", _COMPUTE_BUFFER_POINTS);
         _EditPointsCompute.SetBuffer(kernel, "_selected_points_index", _POINT_SELECTED_INDEX_BUFFER);
 
         _EditPointsCompute.Dispatch(kernel, num_groups, 1, 1);
@@ -471,7 +466,6 @@ public class PointCloudManager : MonoBehaviour
         int[] index_arr = new int[selected_count[0]];
         _POINT_SELECTED_INDEX_BUFFER.GetData(index_arr);
 
-        //_POINT_SELECTED_INDEX_BUFFER.Dispose();
         selected_points_count.Dispose();
 
         return index_arr;
@@ -544,7 +538,7 @@ public class PointCloudManager : MonoBehaviour
     public void ColorByClass()
     {
         int num_groups = Mathf.CeilToInt(_POINTS_IN_CLOUD / (float)_CS_POINTS_BUFFER_THREADS);
-        int kernel     = _EditPointsCompute.FindKernel("ColorByClass");
+        int kernel = _EditPointsCompute.FindKernel("ColorByClass");
 
         Vector4[] class_colors = new Vector4[256];
         for (int i = 0; i < 256; i++)
@@ -589,8 +583,6 @@ public class PointCloudManager : MonoBehaviour
 
     public void ColorByHeight()
     {
-        //print("_PointCloudFormat.MaxY: " + _PointCloudFormat.MaxY);
-        //print("_PointCloudFormat.MinY: " + _PointCloudFormat.MinY);
         int num_groups = Mathf.CeilToInt(_POINTS_IN_CLOUD / (float)_CS_POINTS_BUFFER_THREADS);
         int kernel = _EditPointsCompute.FindKernel("ColorByHigth");
 
@@ -600,7 +592,7 @@ public class PointCloudManager : MonoBehaviour
         _EditPointsCompute.SetVector("_color_3", Color.red);
 
         float hight_interval = (float)(_PointCloudFormat.MaxY - _PointCloudFormat.MinY);
-        _EditPointsCompute.SetFloat("_hight_interval",  hight_interval);
+        _EditPointsCompute.SetFloat("_hight_interval", hight_interval);
         _EditPointsCompute.SetFloat("_min_y", (float)_PointCloudFormat.MinY);
 
         _EditPointsCompute.SetBuffer(kernel, "_Points", _COMPUTE_BUFFER_POINTS);
@@ -636,7 +628,7 @@ public class PointCloudManager : MonoBehaviour
 
     public void UserColorActive(bool active)
     {
-        if(active)
+        if (active)
         {
             _Material.SetInt("_user_color", 1);
         }
@@ -670,10 +662,10 @@ public class PointCloudManager : MonoBehaviour
         int num_groups = Mathf.CeilToInt(_POINTS_IN_CLOUD / (float)_CS_POINTS_BUFFER_THREADS);
         int kernel = _prune_pcxr.FindKernel("RemoveDeletedPoints");
 
-        ComputeBuffer pruned_points       = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float) * _STRIDE, ComputeBufferType.Append);
+        ComputeBuffer pruned_points = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float) * _STRIDE, ComputeBufferType.Append);
         ComputeBuffer pruned_points_count = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
 
-        _prune_pcxr.SetBuffer(kernel, "_points",        _COMPUTE_BUFFER_POINTS);
+        _prune_pcxr.SetBuffer(kernel, "_points", _COMPUTE_BUFFER_POINTS);
         _prune_pcxr.SetBuffer(kernel, "_pruned_points", pruned_points);
 
         pruned_points.SetCounterValue(0);
@@ -693,10 +685,6 @@ public class PointCloudManager : MonoBehaviour
         // exists in the cloud. Has to do with the variable NUM_THREADS in the shader.
         int max_size = _POINTS_IN_CLOUD * _STRIDE * sizeof(float);
 
-        //_TransferGPUData_Simple_stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        //_AsyncGPU_TransferGPU_Data_Request = AsyncGPUReadback.Request(pruned_points);
-
-        // pruned_points.GetData(_pruned_points_byte_data, 0, 0, max_size);
         pruned_points.GetData(_pruned_points_byte_data);
 
         stopwatch.Stop();
@@ -748,34 +736,6 @@ public class PointCloudManager : MonoBehaviour
         return nearest_position.pos;
     }
 
-    //public Vector3 GetNearestPointPositionInSelected(Vector3 position)
-    //{
-    //    Vector3 nearest_position = SearchNearestPoint(position,
-    //        _COMPUTE_BUFFER_POINTS);
-
-    //    return nearest_position;
-    //}
-
-    //public Vector3 GetNearestPointPositionSelected(Vector3 position)
-    //{
-    //    DispatchCreatePointsPositionBuffer(_COMPUTE_BUFFER_POINTS,
-    //        _COMPUTE_BUFFER_CS_POINTS_POSITION);
-
-    //    DispatchComputeDistanceToPoints(position,
-    //        _COMPUTE_BUFFER_CS_POINTS_POSITION,
-    //        _COMPUTE_BUFFER_CS_DISTANCE_TO_POINT);
-
-    //    //DispatchReduceDistance(_COMPUTE_BUFFER_CS_DISTANCE_TO_POINT,
-    //    //    _COMPUTE_BUFFER_CS_DISTANCE_TO_POINT_REDUCE,
-    //    //    _COMPUTE_BUFFER_POINTS);
-
-
-    //    // read _COMPUTE_BUFFER_NEAREST_POINT
-    //    float[] pos = new float[3];
-    //    _COMPUTE_BUFFER_NEAREST_POINT_POSITION.GetData(pos);
-    //    Vector3 nearest_position = new Vector3(pos[0], pos[1], pos[2]);
-    //    return nearest_position;
-    //}
 
     public void CullingActive(bool active)
     {
@@ -788,7 +748,7 @@ public class PointCloudManager : MonoBehaviour
         int num_groups = Mathf.CeilToInt(las_header.Numberofpointrecords / threads);
         int kernel = -1;
 
-        switch(las_header.PointDataFormatID)
+        switch (las_header.PointDataFormatID)
         {
             case 0:
                 kernel = _LAS_to_PCXR.FindKernel("LAS12PDR0");
@@ -813,16 +773,16 @@ public class PointCloudManager : MonoBehaviour
         ComputeBuffer las_header_buffer = new ComputeBuffer((int)_LAS_HEADER.Numberofpointrecords, 12 * sizeof(double), ComputeBufferType.Default);
 
         double[] las_header_data = new double[12];
-        las_header_data[0]  = las_header.Xscalefactor;
-        las_header_data[1]  = las_header.Yscalefactor;
-        las_header_data[2]  = las_header.Zscalefactor;
-        las_header_data[3]  = las_header.Xoffset;
-        las_header_data[4]  = las_header.Yoffset;
-        las_header_data[5]  = las_header.Zoffset;
-        las_header_data[6]  = las_header.MaxX;
-        las_header_data[7]  = las_header.MinX;
-        las_header_data[8]  = las_header.MaxY;
-        las_header_data[9]  = las_header.MinY;
+        las_header_data[0] = las_header.Xscalefactor;
+        las_header_data[1] = las_header.Yscalefactor;
+        las_header_data[2] = las_header.Zscalefactor;
+        las_header_data[3] = las_header.Xoffset;
+        las_header_data[4] = las_header.Yoffset;
+        las_header_data[5] = las_header.Zoffset;
+        las_header_data[6] = las_header.MaxX;
+        las_header_data[7] = las_header.MinX;
+        las_header_data[8] = las_header.MaxY;
+        las_header_data[9] = las_header.MinY;
         las_header_data[10] = las_header.MaxZ;
         las_header_data[11] = las_header.MinZ;
 
@@ -854,7 +814,7 @@ public class PointCloudManager : MonoBehaviour
     }
 
     public PointPos SearchNearestPoint(
-        Vector3       fromPosition,
+        Vector3 fromPosition,
         ComputeBuffer points,
         bool use_selected_points = false)
     {
@@ -929,13 +889,13 @@ public class PointCloudManager : MonoBehaviour
             _FindNearestPointCompute.Dispatch(kernel_create_points_position_buffer, num_groups_create_points_position, 1, 1);
         }
 
-        
+
         /*** ComputeDistanceToPoints ***/
         int kernelComputeDistanceToPoints = _FindNearestPointCompute.FindKernel("ComputeDistanceToPoints");
-        ComputeBuffer distance_buffer        = new ComputeBuffer(point_count, sizeof(float) + sizeof(uint),     ComputeBufferType.Default);
+        ComputeBuffer distance_buffer = new ComputeBuffer(point_count, sizeof(float) + sizeof(uint), ComputeBufferType.Default);
 
         _FindNearestPointCompute.SetVector("_NearestPointFromPosition", fromPosition);
-        _FindNearestPointCompute.SetBuffer(kernelComputeDistanceToPoints, "_DistanceBuffer",       distance_buffer);
+        _FindNearestPointCompute.SetBuffer(kernelComputeDistanceToPoints, "_DistanceBuffer", distance_buffer);
         _FindNearestPointCompute.SetBuffer(kernelComputeDistanceToPoints, "_PointsPositionBuffer", points_position_buffer);
 
         int num_groups_compute_dist = Mathf.CeilToInt(point_count / (float)_CS_NEAREST_POINT_THREADS);
@@ -943,29 +903,29 @@ public class PointCloudManager : MonoBehaviour
 
         /*** Execute ReduceDistance ***/
         int num_threads = _CS_NEAREST_POINT_THREADS;
-        int dist_reduce_groups = Mathf.FloorToInt(point_count / ((float)num_threads*2));
+        int dist_reduce_groups = Mathf.FloorToInt(point_count / ((float)num_threads * 2));
 
         int kernel = _FindNearestPointCompute.FindKernel("ReduceDistance");
 
         ComputeBuffer distance_reduce_buffer = new ComputeBuffer(dist_reduce_groups, sizeof(float) + sizeof(uint), ComputeBufferType.Default);
 
         _FindNearestPointCompute.SetInt("dist_reduce_groups", dist_reduce_groups);
-        _FindNearestPointCompute.SetBuffer(kernel, "_DistanceBuffer",       distance_buffer);
+        _FindNearestPointCompute.SetBuffer(kernel, "_DistanceBuffer", distance_buffer);
         _FindNearestPointCompute.SetBuffer(kernel, "_DistanceReduceBuffer", distance_reduce_buffer);
-        
+
         _FindNearestPointCompute.Dispatch(kernel, dist_reduce_groups, 1, 1);
 
 
         /*** Execute SetMinDistance ***/
         int kernelSetMinDistance = _FindNearestPointCompute.FindKernel("SetMinDistance");
 
-        ComputeBuffer nearest_point_id       = new ComputeBuffer(1, sizeof(uint),      ComputeBufferType.Default);
+        ComputeBuffer nearest_point_id = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Default);
         ComputeBuffer nearest_point_position = new ComputeBuffer(1, sizeof(float) * 3, ComputeBufferType.Default);
 
-        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_DistanceReduceBuffer",       distance_reduce_buffer);
-        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_NearestPointIdBuffer",       nearest_point_id);
+        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_DistanceReduceBuffer", distance_reduce_buffer);
+        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_NearestPointIdBuffer", nearest_point_id);
         _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_NearestPointPositionBuffer", nearest_point_position);
-        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_PointsPositionBuffer",       points_position_buffer);
+        _FindNearestPointCompute.SetBuffer(kernelSetMinDistance, "_PointsPositionBuffer", points_position_buffer);
 
         _FindNearestPointCompute.Dispatch(kernelSetMinDistance, 1, 1, 1);
 
@@ -986,7 +946,7 @@ public class PointCloudManager : MonoBehaviour
 
         PointPos pp = new PointPos();
         pp.pos = nearest_position;
-        pp.id = nearest_id [0];
+        pp.id = nearest_id[0];
 
         return pp;
     }
@@ -1055,7 +1015,7 @@ public class PointCloudManager : MonoBehaviour
 
     public void SetAddIntensityToColor(bool addIntensity)
     {
-        
+
         if (addIntensity)
         {
             _Material.SetInt("_AddIntensityValueToColor", 1);
@@ -1232,7 +1192,7 @@ public class PointCloudManager : MonoBehaviour
     public void StartImportLAS()
     {
         string file_path = _config.paths.root_file_path + @"\import\LAS\" + _ReadFilename + @".las";
-        if(!File.Exists(file_path))
+        if (!File.Exists(file_path))
         {
             throw new FileNotFoundException("File " + file_path + " not found");
         }
@@ -1528,7 +1488,7 @@ public class PointCloudManager : MonoBehaviour
 
     public void SelectPointsInList(float[] point_list)
     {
-        if( point_list.Length > 0 )
+        if (point_list.Length > 0)
         {
             int num_groups = Mathf.CeilToInt(point_list.Length / (float)_CS_POINTS_BUFFER_THREADS);
 
@@ -1566,7 +1526,7 @@ public class PointCloudManager : MonoBehaviour
     {
         int num_groups = Mathf.CeilToInt(_POINTS_IN_CLOUD / (float)_CS_POINTS_BUFFER_THREADS);
         int kernel = _EditPointsCompute.FindKernel("SelectByClass");
-        
+
         _EditPointsCompute.SetInt("_selection_class", class_id);
         _EditPointsCompute.SetBuffer(kernel, "_Points", _COMPUTE_BUFFER_POINTS);
         _EditPointsCompute.Dispatch(kernel, num_groups, 1, 1);
@@ -1578,9 +1538,9 @@ public class PointCloudManager : MonoBehaviour
         Debug.Log("SavePointCloudPCXRInternalByThreadPruned - start\n");
 
         string pathFull = _config.paths.root_file_path + @"\serialized\" + _WriteFilename + ".pcxr";
-        ushort stride   = (ushort)_PointCloudFormat.Stride;
+        ushort stride = (ushort)_PointCloudFormat.Stride;
 
-        uint numberOfPoints = (uint)(_pruned_points_byte_data.Length / (stride * sizeof(float)) );
+        uint numberOfPoints = (uint)(_pruned_points_byte_data.Length / (stride * sizeof(float)));
 
         Debug.Log($"pruned numberOfPoints: {numberOfPoints}\n");
         PCXRHeader header = new PCXRHeader();
@@ -1597,10 +1557,10 @@ public class PointCloudManager : MonoBehaviour
         header.UserStartRotationZ = _UserStartRotation.z;
 
         header.AddIntensityValueToColor = (int)_PointCloudFormat.AddIntensityValueToColor;
-        header.IntensityAsColor         = (int)_PointCloudFormat.IntensityAsColor;
-        header.ColorIntensity           = (float)_PointCloudFormat.AddIntensityToColor;
-        header.GeometrySize             = (float)_PointCloudFormat.GeometrySize;
-        header.UserColorAsColor         = (float)_PointCloudFormat.UserColorAsColor;
+        header.IntensityAsColor = (int)_PointCloudFormat.IntensityAsColor;
+        header.ColorIntensity = (float)_PointCloudFormat.AddIntensityToColor;
+        header.GeometrySize = (float)_PointCloudFormat.GeometrySize;
+        header.UserColorAsColor = (float)_PointCloudFormat.UserColorAsColor;
 
         header.MaxX = (float)_PointCloudFormat.MaxX;
         header.MaxY = (float)_PointCloudFormat.MaxY;
@@ -1612,9 +1572,9 @@ public class PointCloudManager : MonoBehaviour
         header.XScaleFactor = _PointCloudFormat.XScaleFactor;
         header.YScaleFactor = _PointCloudFormat.YScaleFactor;
         header.ZScaleFactor = _PointCloudFormat.ZScaleFactor;
-        header.XOffset      = _PointCloudFormat.XOffset;
-        header.YOffset      = _PointCloudFormat.YOffset;
-        header.ZOffset      = _PointCloudFormat.ZOffset;
+        header.XOffset = _PointCloudFormat.XOffset;
+        header.YOffset = _PointCloudFormat.YOffset;
+        header.ZOffset = _PointCloudFormat.ZOffset;
 
         PCXRWriterBuffered writer = new PCXRWriterBuffered(pathFull, header);
 
@@ -1666,7 +1626,7 @@ public class PointCloudManager : MonoBehaviour
 
         PointCloudFormat pointCloudFormat = new PointCloudFormat();
 
-        uint   numberOfPoints;
+        uint numberOfPoints;
         ushort stride;
 
 
@@ -1685,10 +1645,10 @@ public class PointCloudManager : MonoBehaviour
         _UserStartRotation.w = pcxrReaderIO._Header.UserStartRotationW;
 
         pointCloudFormat.AddIntensityValueToColor = pcxrReaderIO._Header.AddIntensityValueToColor;
-        pointCloudFormat.IntensityAsColor         = pcxrReaderIO._Header.IntensityAsColor;
-        pointCloudFormat.AddIntensityToColor      = pcxrReaderIO._Header.ColorIntensity;
-        pointCloudFormat.GeometrySize             = pcxrReaderIO._Header.GeometrySize;
-        pointCloudFormat.UserColorAsColor         = pcxrReaderIO._Header.UserColorAsColor;
+        pointCloudFormat.IntensityAsColor = pcxrReaderIO._Header.IntensityAsColor;
+        pointCloudFormat.AddIntensityToColor = pcxrReaderIO._Header.ColorIntensity;
+        pointCloudFormat.GeometrySize = pcxrReaderIO._Header.GeometrySize;
+        pointCloudFormat.UserColorAsColor = pcxrReaderIO._Header.UserColorAsColor;
         pointCloudFormat.MaxX = pcxrReaderIO._Header.MaxX;
         pointCloudFormat.MaxY = pcxrReaderIO._Header.MaxY;
         pointCloudFormat.MaxZ = pcxrReaderIO._Header.MaxZ;
@@ -1749,7 +1709,7 @@ public class PointCloudManager : MonoBehaviour
         int num_groups = Mathf.CeilToInt(number_of_points / (float)_CS_POINTS_BUFFER_THREADS);
 
         _PointGeneratorCompute.Dispatch(kernel, num_groups, 1, 1);
-        
+
 
         _POINTS_IN_CLOUD = number_of_points;
         SetPointCloudFormat(pointCloudFormat);
@@ -1774,12 +1734,12 @@ public class PointCloudManager : MonoBehaviour
     private IEnumerator ComputeBufferSetDataCoroutine()
     {
         System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
-       
+
         // 128-bit stride for performance. 16 bytes.
         // Used by compute shader _PointBufferManager to fill append buffer for shader (frustum culling)
         _COMPUTE_BUFFER_POINTS = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float) * _STRIDE, ComputeBufferType.Default);
         _COMPUTE_BUFFER_CREATED = true;
-        
+
 
         if (_UsePointsByteData)
         {
@@ -1807,7 +1767,7 @@ public class PointCloudManager : MonoBehaviour
                             break;
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Debug.Log("Failed to create ComputeBuffer: " + e.ToString());
                 }
@@ -1856,7 +1816,7 @@ public class PointCloudManager : MonoBehaviour
         _COMPUTE_BUFFER_COM = new ComputeBuffer(2, sizeof(float), ComputeBufferType.Default);
         _COMPUTE_BUFFER_COM.SetData(new float[2] { 0, 0 });
 
-        _COMPUTE_BUFFER_CS_DISPATH_INDIRECT_ARGS = new ComputeBuffer(1, sizeof(uint)*4, ComputeBufferType.IndirectArguments);
+        _COMPUTE_BUFFER_CS_DISPATH_INDIRECT_ARGS = new ComputeBuffer(1, sizeof(uint) * 4, ComputeBufferType.IndirectArguments);
         DispatchArgs dArgs;
         dArgs.x = (uint)Mathf.CeilToInt(_POINTS_IN_CLOUD / (float)_CS_POINTS_BUFFER_THREADS);
         dArgs.y = 1;
@@ -1864,7 +1824,7 @@ public class PointCloudManager : MonoBehaviour
         dArgs.w = 1;
         _COMPUTE_BUFFER_CS_DISPATH_INDIRECT_ARGS.SetData(new DispatchArgs[1] { dArgs });
 
-        _COMPUTE_BUFFER_CS_DEBUG = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float)*4, ComputeBufferType.Default);
+        _COMPUTE_BUFFER_CS_DEBUG = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float) * 4, ComputeBufferType.Default);
 
         _COMPUTE_BUFFER_CS_POINTS_BUFFER_APPEND = new ComputeBuffer(_POINTS_IN_CLOUD, sizeof(float) * _STRIDE, ComputeBufferType.Append);
 
@@ -2037,7 +1997,7 @@ public class PointCloudManager : MonoBehaviour
         for (uint i = 0; i < numberOfPoints; i++)
         {
             lasReaderPoint = lasreader.GetNextPoint();
-            lasPoints[i]   = new LASPointXR();
+            lasPoints[i] = new LASPointXR();
             lasPoints[i].X = lasReaderPoint.X;
             lasPoints[i].Y = lasReaderPoint.Y;
             lasPoints[i].Z = lasReaderPoint.Z;
@@ -2242,11 +2202,11 @@ public class PointCloudManager : MonoBehaviour
                 intensityNormalized = 0.001f;
             }
 
-            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 7]  = 0.0f;
-            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 8]  = 0.0f;
-            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 9]  = intensityNormalized;
+            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 7] = 0.0f;
+            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 8] = 0.0f;
+            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 9] = intensityNormalized;
             _COMPUTE_BUFFER_POINTS_DATA[i * stride + 10] = classification;
-            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 11] = 0.0f; 
+            _COMPUTE_BUFFER_POINTS_DATA[i * stride + 11] = 0.0f;
         }
         lasreader.Close();
 
@@ -2271,7 +2231,7 @@ public class PointCloudManager : MonoBehaviour
     {
         Debug.Log("ImportLASThreadBytes - Start\n");
 
-        if(!File.Exists(filePath))
+        if (!File.Exists(filePath))
         {
             throw new FileNotFoundException("File " + filePath + " not found");
         }
@@ -2279,19 +2239,19 @@ public class PointCloudManager : MonoBehaviour
         LASReaderBuffered las_reader = new LASReaderBuffered(filePath, 1000);
         _LAS_HEADER = las_reader._Header;
 
-        PointCloudFormat pointCloudFormat         = new PointCloudFormat();
-        pointCloudFormat.Stride                   = stride;
+        PointCloudFormat pointCloudFormat = new PointCloudFormat();
+        pointCloudFormat.Stride = stride;
         pointCloudFormat.AddIntensityValueToColor = 0;
-        pointCloudFormat.IntensityAsColor         = 1;
-        pointCloudFormat.AddIntensityToColor      = 0;
-        pointCloudFormat.UserColorAsColor         = 1;
-        pointCloudFormat.GeometrySize             = 0.002f;
-        pointCloudFormat.XScaleFactor             = _LAS_HEADER.Xscalefactor;
-        pointCloudFormat.YScaleFactor             = _LAS_HEADER.Yscalefactor;
-        pointCloudFormat.ZScaleFactor             = _LAS_HEADER.Zscalefactor;
-        pointCloudFormat.XOffset                  = _LAS_HEADER.Xoffset;
-        pointCloudFormat.YOffset                  = _LAS_HEADER.Yoffset;
-        pointCloudFormat.ZOffset                  = _LAS_HEADER.Zoffset;
+        pointCloudFormat.IntensityAsColor = 1;
+        pointCloudFormat.AddIntensityToColor = 0;
+        pointCloudFormat.UserColorAsColor = 1;
+        pointCloudFormat.GeometrySize = 0.02f;
+        pointCloudFormat.XScaleFactor = _LAS_HEADER.Xscalefactor;
+        pointCloudFormat.YScaleFactor = _LAS_HEADER.Yscalefactor;
+        pointCloudFormat.ZScaleFactor = _LAS_HEADER.Zscalefactor;
+        pointCloudFormat.XOffset = _LAS_HEADER.Xoffset;
+        pointCloudFormat.YOffset = _LAS_HEADER.Yoffset;
+        pointCloudFormat.ZOffset = _LAS_HEADER.Zoffset;
 
 
         Debug.Log("ImportLASThreadBytes - Loading LAS data\n");
@@ -2376,17 +2336,17 @@ public class PointCloudManager : MonoBehaviour
 
         LASWriter laswriter = new LASWriter(pathFull, lasHeader);
         laswriter.WriteHeaderBytes();
-        LASPoint  lasPoint  = new LASPoint();
+        LASPoint lasPoint = new LASPoint();
         for (int i = 0; i < numberOfPoints; i++)
         {
             lasPoint.X = data[i * _STRIDE + 0];
             lasPoint.Z = data[i * _STRIDE + 1];
             lasPoint.Y = data[i * _STRIDE + 2];
-            lasPoint.Red   = (ushort)(data[i * _STRIDE + 3] * 65535);
+            lasPoint.Red = (ushort)(data[i * _STRIDE + 3] * 65535);
             lasPoint.Green = (ushort)(data[i * _STRIDE + 4] * 65535);
-            lasPoint.Blue  = (ushort)(data[i * _STRIDE + 5] * 65535);
-            lasPoint.Intensity      = (ushort)(data[i * _STRIDE + 9] * 65535);
-            lasPoint.Classification =   (byte)data[i * _STRIDE + 10];
+            lasPoint.Blue = (ushort)(data[i * _STRIDE + 5] * 65535);
+            lasPoint.Intensity = (ushort)(data[i * _STRIDE + 9] * 65535);
+            lasPoint.Classification = (byte)data[i * _STRIDE + 10];
             laswriter.WritePoint(lasPoint);
 
             exportedPoints++;
@@ -2421,7 +2381,7 @@ public class PointCloudManager : MonoBehaviour
 
         _UPDATE_PROGRESS_IN_GUI = true;
         LASHeader lasHeader = new LASHeader();
-        
+
         DateTime now = new DateTime();
         lasHeader.FileSignature = "LASF".ToCharArray();
         lasHeader.FileSourceID = 0;
@@ -2462,7 +2422,7 @@ public class PointCloudManager : MonoBehaviour
         lasHeader.MaxY = bounds[0].y;
         lasHeader.MaxZ = bounds[0].z;
 
-        LASPoint  lasPoint  = new LASPoint();
+        LASPoint lasPoint = new LASPoint();
         LASWriter laswriter = new LASWriter(pathFull, lasHeader);
         laswriter.WriteHeaderBytes();
         for (int i = 0; i < numberOfPoints; i++)
@@ -2477,12 +2437,12 @@ public class PointCloudManager : MonoBehaviour
             lasPoint.UserData = 0;
             lasPoint.PointSourceID = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 18 * sizeof(float)));
             lasPoint.GPSTime = 0;
-            lasPoint.Red   = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 3 * sizeof(float)) * 65535);
+            lasPoint.Red = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 3 * sizeof(float)) * 65535);
             lasPoint.Green = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 4 * sizeof(float)) * 65535);
-            lasPoint.Blue  = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 5 * sizeof(float)) * 65535);
+            lasPoint.Blue = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 5 * sizeof(float)) * 65535);
 
             laswriter.WritePoint(lasPoint);
-            
+
             exportedPoints++;
         }
         laswriter.Close();
@@ -2502,7 +2462,7 @@ public class PointCloudManager : MonoBehaviour
 
         int number_of_selected_points = data.Length / (_STRIDE * sizeof(float));
         uint exportedPoints = 0;
-        
+
         _UPDATE_PROGRESS_IN_GUI = true;
 
         LASHeader lasHeader = new LASHeader();
@@ -2545,7 +2505,7 @@ public class PointCloudManager : MonoBehaviour
         lasHeader.MaxY = bounds[0].y;
         lasHeader.MaxZ = bounds[0].z;
 
-        LASPoint   lasPoint = new LASPoint();
+        LASPoint lasPoint = new LASPoint();
         LASWriter laswriter = new LASWriter(pathFull, lasHeader);
         laswriter.WriteHeaderBytes();
         for (int i = 0; i < number_of_selected_points; i++)
@@ -2553,16 +2513,16 @@ public class PointCloudManager : MonoBehaviour
             lasPoint.X = BitConverter.ToSingle(data, i * stride_bytes + 0 * sizeof(float));
             lasPoint.Z = BitConverter.ToSingle(data, i * stride_bytes + 1 * sizeof(float));
             lasPoint.Y = BitConverter.ToSingle(data, i * stride_bytes + 2 * sizeof(float));
-            lasPoint.Intensity      = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 9 * sizeof(float)) * 65535);
-            lasPoint.Bitfields      = 0;
+            lasPoint.Intensity = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 9 * sizeof(float)) * 65535);
+            lasPoint.Bitfields = 0;
             lasPoint.Classification = (byte)BitConverter.ToSingle(data, i * stride_bytes + 10 * sizeof(float));
-            lasPoint.ScanAngleRank  = 0; // 16 byte offset
-            lasPoint.UserData       = 0;
-            lasPoint.PointSourceID  = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 18 * sizeof(float)));
-            lasPoint.GPSTime        = 0;
-            lasPoint.Red   = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 3 * sizeof(float)) * 65535);
+            lasPoint.ScanAngleRank = 0; // 16 byte offset
+            lasPoint.UserData = 0;
+            lasPoint.PointSourceID = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 18 * sizeof(float)));
+            lasPoint.GPSTime = 0;
+            lasPoint.Red = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 3 * sizeof(float)) * 65535);
             lasPoint.Green = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 4 * sizeof(float)) * 65535);
-            lasPoint.Blue  = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 5 * sizeof(float)) * 65535);
+            lasPoint.Blue = (ushort)(BitConverter.ToSingle(data, i * stride_bytes + 5 * sizeof(float)) * 65535);
 
             laswriter.WritePoint(lasPoint);
 
@@ -2585,7 +2545,7 @@ public class PointCloudManager : MonoBehaviour
         Debug.Log("Export_LAS_Compute - start\n");
 
         uint numberOfPoints = (uint)(data.Length / (_STRIDE * sizeof(float)));
-        print("num_points: " + (data.Length / (_STRIDE * sizeof(float))) );
+        print("num_points: " + (data.Length / (_STRIDE * sizeof(float))));
 
         Debug.LogFormat("Export_LAS_Compute - numberOfPoints: {0}\n", numberOfPoints);
 
@@ -2594,8 +2554,8 @@ public class PointCloudManager : MonoBehaviour
         DateTime now = new DateTime();
 
         LASHeader14 las_header = new LASHeader14();
-        las_header.FileSignature  = "LASF".ToCharArray();
-        las_header.FileSourceID   = 0;
+        las_header.FileSignature = "LASF".ToCharArray();
+        las_header.FileSourceID = 0;
         las_header.GlobalEncoding = 0;
         las_header.ProjectIDGUIDdata1 = 0;
         las_header.ProjectIDGUIDdata2 = 0;
@@ -2603,15 +2563,15 @@ public class PointCloudManager : MonoBehaviour
         las_header.ProjectIDGUIDdata4 = "0".ToCharArray();
         las_header.VersionMajor = 1;
         las_header.VersionMinor = 4;
-        las_header.SystemIdentifier      = "PCXR".ToCharArray();
-        las_header.GeneratingSoftware    = "PointCloudXR".ToCharArray();
+        las_header.SystemIdentifier = "PCXR".ToCharArray();
+        las_header.GeneratingSoftware = "PointCloudXR".ToCharArray();
         las_header.FileCreationDayofYear = (ushort)now.DayOfYear;
-        las_header.FileCreationYear  = (ushort)now.Year;
-        las_header.HeaderSize        = 375;
+        las_header.FileCreationYear = (ushort)now.Year;
+        las_header.HeaderSize = 375;
         las_header.Offsettopointdata = 375;
         las_header.NumberofVariableLengthRecords = 0;
-        las_header.PointDataFormatID      = 7;
-        las_header.PointDataRecordLength  = 36;
+        las_header.PointDataFormatID = 7;
+        las_header.PointDataRecordLength = 36;
         las_header.LegacyNumberofpointsbyreturn = new uint[5];
         las_header.LegacyNumberofpointrecords = 0;
         las_header.Xscalefactor = _PointCloudFormat.XScaleFactor;
@@ -2628,11 +2588,11 @@ public class PointCloudManager : MonoBehaviour
         las_header.MaxY = bounds[0].y;
         las_header.MaxZ = bounds[0].z;
 
-        las_header.StartOfWaveformDataPacketRecord          = 0;
+        las_header.StartOfWaveformDataPacketRecord = 0;
         las_header.StartOfFirstExtendedVariableLengthRecord = 0;
-        las_header.NumberOfExtendedVariableLengthRecords    = 0;
-        las_header.NumberOfPointRecords                     = numberOfPoints;
-        las_header.NumberOfPointsByReturn                   = new ulong[15];
+        las_header.NumberOfExtendedVariableLengthRecords = 0;
+        las_header.NumberOfPointRecords = numberOfPoints;
+        las_header.NumberOfPointsByReturn = new ulong[15];
 
 
         byte[] las_point_data = Dispatch_PCXR_to_LAS(las_header);
@@ -2666,7 +2626,7 @@ public class PointCloudManager : MonoBehaviour
     private bool ComputeBuffersCreated()
     {
         if (_COMPUTE_BUFFER_POINTS != null &&
-           _COMPUTE_BUFFER_COM != null 
+           _COMPUTE_BUFFER_COM != null
            )
         {
             return true;
@@ -2686,7 +2646,7 @@ public class PointCloudManager : MonoBehaviour
         {
             Camera cam = _UserCamera; // Draws geometry only in Game window
 
-            if(_draw_all_cameras)
+            if (_draw_all_cameras)
             {
                 cam = Camera.current; // Draws geometry in editor Scene window and Game windows
             }
@@ -2732,14 +2692,14 @@ public class PointCloudManager : MonoBehaviour
     {
         _Material.SetPass(0);
 
-        _Material.SetBuffer("pointsAll",  _COMPUTE_BUFFER_POINTS);
+        _Material.SetBuffer("pointsAll", _COMPUTE_BUFFER_POINTS);
 
         _Material.SetBuffer("pointsInFrustum", _COMPUTE_BUFFER_CS_POINTS_BUFFER_APPEND);
 
-        _Material.SetBuffer("computeBufferCom",            _COMPUTE_BUFFER_COM);
+        _Material.SetBuffer("computeBufferCom", _COMPUTE_BUFFER_COM);
 
         Graphics.ClearRandomWriteTargets();
-        Graphics.SetRandomWriteTarget(3, _COMPUTE_BUFFER_COM,           true);
+        Graphics.SetRandomWriteTarget(3, _COMPUTE_BUFFER_COM, true);
         Graphics.SetRandomWriteTarget(5, _COMPUTE_BUFFER_CS_POINTS_BUFFER_APPEND, true);
         Graphics.SetRandomWriteTarget(6, _COMPUTE_BUFFER_POINTS, true);
     }
@@ -2765,8 +2725,8 @@ public class PointCloudManager : MonoBehaviour
 
     public void TransferGPUDataSimple()
     {
-            _COMPUTE_BUFFER_POINTS_DATA_BYTES = new byte[_PointCloudFormat.NumberOfPoints * _PointCloudFormat.Stride * sizeof(float)];
-            _COMPUTE_BUFFER_POINTS.GetData(_COMPUTE_BUFFER_POINTS_DATA_BYTES);
+        _COMPUTE_BUFFER_POINTS_DATA_BYTES = new byte[_PointCloudFormat.NumberOfPoints * _PointCloudFormat.Stride * sizeof(float)];
+        _COMPUTE_BUFFER_POINTS.GetData(_COMPUTE_BUFFER_POINTS_DATA_BYTES);
 
         OnGPUDataTransfereDone?.Invoke(this, EventArgs.Empty);
     }
@@ -2810,9 +2770,9 @@ public class PointCloudManager : MonoBehaviour
     public void SavePointCloudByThread()
     {
         _PointCloudFormat.AddIntensityValueToColor = _Material.GetInt("_AddIntensityValueToColor");
-        _PointCloudFormat.AddIntensityToColor      = _Material.GetFloat("_ColorIntensity");
-        _PointCloudFormat.GeometrySize             = _Material.GetFloat("_PointRadius");
-        _PointCloudFormat.UserColorAsColor         = _Material.GetFloat("_user_color");
+        _PointCloudFormat.AddIntensityToColor = _Material.GetFloat("_ColorIntensity");
+        _PointCloudFormat.GeometrySize = _Material.GetFloat("_PointRadius");
+        _PointCloudFormat.UserColorAsColor = _Material.GetFloat("_user_color");
 
         DispatchPrunePCXR();
         new Thread(SavePointCloudPCXRInternalByThreadPruned).Start();

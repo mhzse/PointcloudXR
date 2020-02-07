@@ -9,7 +9,8 @@ public class RestrictionButton : MonoBehaviour, ISelectHandler// required interf
     public ViveCtrl viveCtrl;
     public RestrictMode restrictMode;
     private bool isSelected = false;
- 
+
+   
     public void OnSelect(BaseEventData eventData)
     {
         Debug.Log(this.gameObject.name + " was selected");
